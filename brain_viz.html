@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>BrainBrowser Vector Field Demo</title>
+  <script src="https://brainbrowser.cbrain.mcgill.ca/js/brainbrowser.surface-viewer.min.js"></script>
+  <style>
+    #brainbrowser {
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="brainbrowser"></div>
+
+  <script>
+    BrainBrowser.SurfaceViewer.start("brainbrowser", function(viewer) {
+      // Background
+      viewer.setClearColor(0x000000);
+
+      // Load cortical surface mesh (e.g. FreeSurfer .obj)
+      viewer.loadModelFromURL("lh.pial.obj", {
+        format: "obj",
+        color: [0.8, 0.8, 0.8]
+      });
+
+      // Camera setup
+      viewer.setView({ azimuth: 120, elevation: 30, zoom: 1.5 });
+    });
+  </script>
+</body>
+</html>
