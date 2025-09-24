@@ -1,32 +1,118 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>BrainBrowser Vector Field Demo</title>
-  <script src="https://brainbrowser.cbrain.mcgill.ca/js/brainbrowser.surface-viewer.min.js"></script>
-  <style>
-    #brainbrowser {
-      width: 100%;
-      height: 100vh;
-    }
-  </style>
+    <title>BrainBrowser 可视化示例</title>
+    <link rel="stylesheet" href="https://brainbrowser.cbrain.mcgill.ca/build/releases/brainbrowser-2.5.min.css">
+    <script src="https://brainbrowser.cbrain.mcgill.ca/build/releases/brainbrowser-2.5.min.js"></script>
+    <style>
+        body { margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        #viewer-container { flex: 1; position: relative; }
+        .controls { padding: 10px; background: #f0f0f0; }
+        button { margin: 0 5px; padding: 5px 10px; }
+    </style>
 </head>
 <body>
-  <div id="brainbrowser"></div>
+    <div class="controls">
+        <button id="load-surface">加载大脑表面</button>
+        <button id="load-vectorfield">加载向量场</button>
+        <button id="show-streamlines">显示流线</button>
+        <button id="reset-view">重置视图</button>
+    </div>
+    <div id="viewer-container"></div>
 
-  <script>
-    BrainBrowser.SurfaceViewer.start("brainbrowser", function(viewer) {
-      // Background
-      viewer.setClearColor(0x000000);
+    <script>
+        // 初始化3D查看器
+        const viewer = new BrainBrowser.SurfaceViewer('viewer-container', {
+            camera: {
+                position: [0, 0, 100]
+            },
+            background: {
+                color: [0.9, 0.9, 0.9] // 浅灰色背景
+            }
+        });
 
-      // Load cortical surface mesh (e.g. FreeSurfer .obj)
-      viewer.loadModelFromURL("lh.pial.obj", {
-        format: "obj",
-        color: [0.8, 0.8, 0.8]
-      });
+        // 错误处理函数
+        function handleError(error) {
+            console.error('发生错误:', error);
+            alert('加载数据时发生错误: ' + error.message);
+        }
 
-      // Camera setup
-      viewer.setView({ azimuth: 120, elevation: 30, zoom: 1.5 });
-    });
-  </script>
+        // 加载大脑表面
+        document.getElementById('load-surface').addEventListener('click', () => {
+            // 这里替换为你的表面数据文件路径
+            const surfaceURL = 'data/brain_surface.surf';
+            const overlayURL = 'data/brain_overlay.func'; // 可选的叠加数据
+            
+            viewer.loadSurfaceFromURL(surfaceURL, (surface) => {
+                console.log('大脑表面加载完成');
+                
+                // 加载叠加数据（如功能成像数据）
+                if (overlayURL) {
+                    viewer.loadOverlayFromURL(overlayURL, {
+                        min: -5,  // 数据最小值（用于颜色映射）
+                        max: 5,   // 数据最大值
+                        colormap: 'coolwarm' // 颜色映射方案
+                    }, (overlay) => {
+                        console.log('叠加数据加载完成');
+                        viewer.render();
+                    }, handleError);
+                }
+                
+                viewer.render();
+            }, handleError);
+        });
+
+        // 加载向量场
+        document.getElementById('load-vectorfield').addEventListener('click', () => {
+            // 向量场数据通常为每个顶点的x,y,z方向向量
+            const vectorFieldURL = 'data/vector_field.func';
+            
+            viewer.loadVectorFieldFromURL(vectorFieldURL, {
+                scale: 1.5,  // 向量长度缩放因子
+                color: [1, 0, 0] // 向量颜色（红色）
+            }, (vectorField) => {
+                console.log('向量场加载完成');
+                viewer.showVectorField(true); // 显示向量场
+                viewer.render();
+            }, handleError);
+        });
+
+        // 显示流线
+        document.getElementById('show-streamlines').addEventListener('click', () => {
+            if (!viewer.vectorField) {
+                alert('请先加载向量场数据');
+                return;
+            }
+            
+            // 从向量场生成流线
+            viewer.generateStreamlines({
+                stepSize: 0.5,    // 步长
+                maxSteps: 100,    // 最大步数
+                seedPoints: 200,  // 种子点数量
+                colorByDirection: true, // 按方向着色
+                lineWidth: 1.5    // 线宽
+            }, (streamlines) => {
+                console.log('流线生成完成');
+                viewer.showStreamlines(true); // 显示流线
+                viewer.render();
+            }, handleError);
+        });
+
+        // 重置视图
+        document.getElementById('reset-view').addEventListener('click', () => {
+            viewer.resetCamera();
+            viewer.render();
+        });
+
+        // 添加基本交互提示
+        viewer.addEventListener('ready', () => {
+            console.log('查看器已准备就绪');
+            console.log('交互提示:');
+            console.log('- 左键拖动: 旋转视图');
+            console.log('- 右键拖动: 平移视图');
+            console.log('- 滚轮: 缩放视图');
+        });
+    </script>
 </body>
 </html>
+    
