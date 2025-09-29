@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大脑皮层4D数据可视化</title>
+    <!-- BrainBrowser 核心库 -->
+    <script src="https://cdn.jsdelivr.net/npm/brainbrowser@2.5.1/lib/brainbrowser.min.js"></script>
+    <!-- 表面渲染器 -->
+    <script src="https://cdn.jsdelivr.net/npm/brainbrowser@2.5.1/lib/brainbrowser.surfaceviewer.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #0a0a1a; }
+        #viewer-container { width: 100vw; height: 100vh; }
+        #controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; color: white; font-family: Arial; z-index: 100; display: flex; align-items: center; gap: 15px; }
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        button { background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #45a049; }
+        input[type="range"] { width: 200px; }
+        #time-display { min-width: 60px; text-align: center; }
+        .legend { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; color: white; font-family: Arial; z-index: 100; }
+        .legend-item { margin: 5px 0; display: flex; align-items: center; }
+        .color-block { width: 15px; height: 15px; margin-right: 8px; }
+    </style>
+</head>
+<body>
+    <div id="viewer-container"></div>
+    
+    <div id="controls">
+        <div class="control-group">
+            <span>时间点:</span>
+            <input type="range" id="time-slider" min="0" max="9" value="0">
+            <span id="time-display">0/9</span>
+        </div>
+        <button id="play-pause">播放</button>
+        <button id="reset-view">重置视图</button>
+    </div>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="color-block" style="background: #4CAF50;"></div>
+            <span>向量场 (低强度)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-block" style="background: #FFEB3B;"></div>
+            <span>向量场 (中强度)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-block" style="background: #F44336;"></div>
+            <span>向量场 (高强度)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-block" style="background: #2196F3;"></div>
+            <span>流线</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-block" style="background: #FF9800;"></div>
+            <span>功能区域散点</span>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let viewer;
+        let currentTime = 0;
+        const totalTimeSteps = 10;
+        let isPlaying = false;
+        let animationInterval;
+        
+        // 存储可视化对象的引用
+        let vectorObjects = [];
+        let streamlineObjects = [];
+        let featurePointObjects = [];
+        
+        // 模拟的4D数据生成器
+        class BrainDataGenerator {
+            /**
+             * 生成指定时间点的向量场数据
+             * @param {number} time - 时间步长（0~totalTimeSteps）
+             * @returns {Array} 向量数组，每个元素包含位置和方向
+             */
+            static generateVectorField(time) {
+                const vectors = [];
+                const sampleCount = 60; // 采样点数量
+                
+                for (let i = 0; i < sampleCount; i++) {
+                    // 球面上均匀分布的采样点
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    const radius = 1.1 + 0.1 * Math.random(); // 略大于单位球
+                    
+                    // 位置计算
+                    const x = radius * Math.sin(phi) * Math.cos(theta);
+                    const y = radius * Math.sin(phi) * Math.sin(theta);
+                    const z = radius * Math.cos(phi);
+                    
+                    // 随时间变化的方向（模拟大脑活动变化）
+                    const timeFactor = Math.sin(time * 0.5 + x + y);
+                    const dirX = 0.15 * (Math.sin(3 * x + time) + timeFactor);
+                    const dirY = 0.15 * (Math.cos(3 * y + time) - timeFactor);
+                    const dirZ = 0.15 * (Math.sin(3 * z + time) + timeFactor);
+                    
+                    // 强度计算（用于颜色映射）
+                    const intensity = Math.sqrt(dirX ** 2 + dirY ** 2 + dirZ ** 2);
+                    
+                    vectors.push({
+                        position: [x, y, z],
+                        direction: [dirX, dirY, dirZ],
+                        intensity: intensity
+                    });
+                }
+                
+                return vectors;
+            }
+
+            /**
+             * 生成随时间变化的流线种子点
+             * @param {number} time - 时间步长
+             * @returns {Array} 种子点位置数组
+             */
+            static generateStreamlineSeeds(time) {
+                const seeds = [];
+                const seedCount = 12;
+                
+                for (let i = 0; i < seedCount; i++) {
+                    // 基于时间偏移生成动态种子点
+                    const offset = time * 0.1;
+                    const theta = (Math.random() + offset) * Math.PI * 2;
+                    const phi = Math.acos(2 * Math.random() - 1 + offset * 0.1);
+                    const radius = 1.05 + 0.05 * Math.random();
+                    
+                    seeds.push([
+                        radius * Math.sin(phi) * Math.cos(theta),
+                        radius * Math.sin(phi) * Math.sin(theta),
+                        radius * Math.cos(phi)
+                    ]);
+                }
+                
+                return seeds;
+            }
+
+            /**
+             * 生成功能区域散点数据
+             * @returns {Array} 散点数组，包含位置和元数据
+             */
+            static generateFeaturePoints() {
+                // 模拟大脑主要功能区域（基于单位球）
+                return [
+                    { name: "前额叶", position: [0.2, 0.9, 0.3], activity: 0.8 },
+                    { name: "顶叶", position: [0, -0.2, 0.9], activity: 0.6 },
+                    { name: "颞叶", position: [0.8, -0.3, -0.4], activity: 0.7 },
+                    { name: "枕叶", position: [0, -0.9, 0.2], activity: 0.9 },
+                    { name: "运动皮层", position: [0.9, 0.2, 0.3], activity: 0.5 },
+                    { name: "感觉皮层", position: [-0.9, 0.2, 0.3], activity: 0.7 },
+                    { name: "语言区", position: [0.7, 0.1, -0.7], activity: 0.6 }
+                ];
+            }
+            
+            /**
+             * 根据位置和时间获取向量
+             * @param {Array} position - 位置 [x, y, z]
+             * @param {number} time - 时间步长
+             * @returns {Object} 向量数据
+             */
+            static getVectorAtPosition(position, time) {
+                const [x, y, z] = position;
+                const timeFactor = Math.sin(time * 0.5 + x + y);
+                const dirX = 0.15 * (Math.sin(3 * x + time) + timeFactor);
+                const dirY = 0.15 * (Math.cos(3 * y + time) - timeFactor);
+                const dirZ = 0.15 * (Math.sin(3 * z + time) + timeFactor);
+                
+                return {
+                    direction: [dirX, dirY, dirZ],
+                    intensity: Math.sqrt(dirX ** 2 + dirY ** 2 + dirZ ** 2)
+                };
+            }
+        }
+        
+        // 初始化BrainBrowser查看器
+        function initViewer() {
+            // 配置查看器
+            const config = {
+                surface: {
+                    color_map: "viridis",
+                    background_color: [0.05, 0.05, 0.1],
+                    show_toolbar: false
+                }
+            };
+            
+            // 创建查看器实例
+            viewer = BrainBrowser.SurfaceViewer.init("viewer-container", config);
+            
+            // 使用内置的示例大脑表面模型
+            // 在实际应用中，你可以加载自己的模型: viewer.loadFromURL("path/to/your/model");
+            viewer.loadDefaultSurface();
+            
+            // 初始化UI控件
+            initControls();
+            
+            // 初始化可视化元素
+            initFeaturePoints();
+            
+            // 初始更新时间点0的数据
+            updateVisualization(0);
+            
+            // 添加点击交互
+            initInteraction();
+        }
+        
+        // 初始化UI控件
+        function initControls() {
+            const timeSlider = document.getElementById("time-slider");
+            const timeDisplay = document.getElementById("time-display");
+            const playPauseButton = document.getElementById("play-pause");
+            const resetViewButton = document.getElementById("reset-view");
+            
+            // 设置时间滑块
+            timeSlider.max = totalTimeSteps - 1;
+            
+            // 更新时间显示
+            function updateTimeDisplay() {
+                timeDisplay.textContent = `${currentTime}/${totalTimeSteps - 1}`;
+            }
+            
+            // 时间滑块事件
+            timeSlider.addEventListener("input", function() {
+                currentTime = parseInt(this.value);
+                updateTimeDisplay();
+                updateVisualization(currentTime);
+            });
+            
+            // 播放/暂停按钮事件
+            playPauseButton.addEventListener("click", function() {
+                isPlaying = !isPlaying;
+                
+                if (isPlaying) {
+                    this.textContent = "暂停";
+                    animationInterval = setInterval(function() {
+                        currentTime = (currentTime + 1) % totalTimeSteps;
+                        timeSlider.value = currentTime;
+                        updateTimeDisplay();
+                        updateVisualization(currentTime);
+                    }, 500); // 每500ms更新一次
+                } else {
+                    this.textContent = "播放";
+                    clearInterval(animationInterval);
+                }
+            });
+            
+            // 重置视图按钮事件
+            resetViewButton.addEventListener("click", function() {
+                viewer.resetView();
+            });
+            
+            // 初始化时间显示
+            updateTimeDisplay();
+        }
+        
+        // 初始化功能区域散点
+        function initFeaturePoints() {
+            const featurePoints = BrainDataGenerator.generateFeaturePoints();
+            
+            featurePoints.forEach(point => {
+                // 创建散点
+                const pointObject = viewer.createPoint(
+                    point.position, 
+                    [1, 0.6, 0], // 橙色
+                    3 // 大小
+                );
+                
+                // 存储元数据
+                pointObject.userData = {
+                    type: 'feature',
+                    data: point
+                };
+                
+                featurePointObjects.push(pointObject);
+            });
+        }
+        
+        // 更新所有可视化元素
+        function updateVisualization(time) {
+            // 清除旧的向量和流线
+            clearVectorObjects();
+            clearStreamlineObjects();
+            
+            // 更新向量场
+            updateVectorField(time);
+            
+            // 更新流线
+            updateStreamlines(time);
+        }
+        
+        // 更新向量场可视化
+        function updateVectorField(time) {
+            const vectors = BrainDataGenerator.generateVectorField(time);
+            
+            vectors.forEach(vector => {
+                // 根据强度确定颜色
+                const color = getIntensityColor(vector.intensity);
+                
+                // 创建箭头
+                const arrowObject = viewer.createArrow(
+                    vector.position,
+                    vector.direction,
+                    color,
+                    2 // 线宽
+                );
+                
+                vectorObjects.push(arrowObject);
+            });
+        }
+        
+        // 更新流线可视化
+        function updateStreamlines(time) {
+            const seeds = BrainDataGenerator.generateStreamlineSeeds(time);
+            const stepCount = 30; // 流线步数
+            const stepSize = 0.08; // 每步长度
+            
+            seeds.forEach(seed => {
+                const points = [seed.slice()];
+                let currentPos = seed.slice();
+                
+                // 生成流线点
+                for (let i = 0; i < stepCount; i++) {
+                    // 获取当前位置的向量
+                    const vector = BrainDataGenerator.getVectorAtPosition(currentPos, time);
+                    
+                    // 计算下一步位置
+                    currentPos[0] += vector.direction[0] * stepSize;
+                    currentPos[1] += vector.direction[1] * stepSize;
+                    currentPos[2] += vector.direction[2] * stepSize;
+                    
+                    // 检查是否超出大脑表面范围
+                    const length = Math.sqrt(
+                        currentPos[0] * currentPos[0] + 
+                        currentPos[1] * currentPos[1] + 
+                        currentPos[2] * currentPos[2]
+                    );
+                    
+                    if (length > 1.5) break;
+                    
+                    points.push(currentPos.slice());
+                }
+                
+                // 创建流线
+                if (points.length > 1) {
+                    const streamlineObject = viewer.createLine(
+                        points,
+                        [0.13, 0.59, 0.95], // 蓝色
+                        1.5 // 线宽
+                    );
+                    
+                    streamlineObjects.push(streamlineObject);
+                }
+            });
+        }
+        
+        // 根据强度获取颜色（绿->黄->红）
+        function getIntensityColor(intensity) {
+            const normalized = Math.min(intensity / 0.25, 1); // 归一化到0-1范围
+            
+            if (normalized < 0.5) {
+                // 绿到黄
+                return [normalized * 2, 1, 0];
+            } else {
+                // 黄到红
+                return [1, 2 - normalized * 2, 0];
+            }
+        }
+        
+        // 清除向量对象
+        function clearVectorObjects() {
+            vectorObjects.forEach(obj => viewer.removeObject(obj));
+            vectorObjects = [];
+        }
+        
+        // 清除流线对象
+        function clearStreamlineObjects() {
+            streamlineObjects.forEach(obj => viewer.removeObject(obj));
+            streamlineObjects = [];
+        }
+        
+        // 初始化交互
+        function initInteraction() {
+            // 添加点击事件监听器
+            viewer.canvas.addEventListener("click", function(event) {
+                // 获取点击的对象
+                const pickedObject = viewer.pick(event.clientX, event.clientY);
+                
+                // 检查是否点击了功能点
+                if (pickedObject && pickedObject.userData && pickedObject.userData.type === 'feature') {
+                    const data = pickedObject.userData.data;
+                    alert(`功能区域: ${data.name}\n活动强度: ${data.activity.toFixed(2)}`);
+                }
+            });
+        }
+        
+        // 当页面加载完成后初始化
+        window.addEventListener("load", initViewer);
+    </script>
+</body>
+</html>
