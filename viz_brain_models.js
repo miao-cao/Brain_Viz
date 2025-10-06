@@ -166,47 +166,53 @@ function onWindowResize() {
 // 使用BrainBrowser加载大脑皮层表面
 function loadBrainSurface() {
     // 创建BrainBrowser表面加载器
-    const surfaceLoader = new BrainBrowser.SurfaceLoader();
     
     // 加载示例表面数据（在实际应用中可替换为自己的数据）
     // BrainBrowser支持多种格式，如FreeSurfer, MNI OBJ等
-    const demoSurface = BrainBrowser.loader.demoFiles.get("surface");
-    
-    surfaceLoader.parseFromData(demoSurface, function(mesh_data) {
-        // 创建Three.js几何体
-        const geometry = new THREE.BufferGeometry();
-        
-        // 设置顶点
-        const vertices = new Float32Array(mesh_data.vertices);
-        geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-        
-        // 设置面
-        const faces = new Uint32Array(mesh_data.faces);
-        geometry.setIndex(new THREE.BufferAttribute(faces, 1));
-        
-        // 计算法线
-        geometry.computeVertexNormals();
-        
-        // 创建材质
-        const material = new THREE.MeshStandardMaterial({
-            color: 0x2c3e50,
-            roughness: 0.8,
-            metalness: 0.2,
-            transparent: true,
-            opacity: 0.7
-        });
-        
-        // 创建网格并添加到场景
-        brainMesh = new THREE.Mesh(geometry, material);
-        brainMesh.scale.set(2, 2, 2); // 放大模型
-        brainMesh.castShadow = true;
-        brainMesh.receiveShadow = true;
-        scene.add(brainMesh);
-        
+    BrainBrowser.SurfaceViewer.start("brainbrowser", function(viewer) {
+
+     //Add an event listener.
+     viewer.addEventListener("displaymodel", function() {
+       console.log("We have a model!");
+     });
+
+     // Start rendering the scene.
+     viewer.render();
+
+     // Load a model into the scene.
+     viewer.loadModelFromURL("/Users/miaoc/Documents/Neuroscience/Data/MRI_FS/BUTTLynden/surf/lh.pial.T1.obj");
+
+     // Hook viewer behaviour into UI.
+     $("#wireframe").change(function(e) {
+       viewer.setWireframe($(this).is(":checked"));
+     });        
+
         // 初始化完成后，开始可视化
-        initVisualization();
+        // initVisualization();
     });
 }
+
+   BrainBrowser.SurfaceViewer.start("brainbrowser", function(viewer) {
+
+     //Add an event listener.
+     viewer.addEventListener("displaymodel", function() {
+       console.log("We have a model!");
+     });
+
+     // Start rendering the scene.
+     viewer.render();
+
+     // Load a model into the scene.
+     viewer.loadModelFromURL("/models/brain_surface.obj");
+
+     // Hook viewer behaviour into UI.
+     $("#wireframe").change(function(e) {
+       viewer.setWireframe($(this).is(":checked"));
+     });
+
+   });
+
+
 
 // 初始化可视化元素
 function initVisualization() {

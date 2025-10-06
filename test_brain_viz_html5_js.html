@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>大脑皮层4D数据可视化</title>
+    <title>PVF visualisation</title>
     <!-- Three.js 库 -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
@@ -11,6 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/brainbrowser@2.5.1/lib/brainbrowser.min.js"></script>
     <!-- HDF5.js 库 (处理HDF5数据) -->
     <script src="https://cdn.jsdelivr.net/npm/hdf5-js@latest/dist/hdf5.js"></script>
+    <!-- <script src="viz_brain_models.js"></script> -->
     <style>
         body { margin: 0; overflow: hidden; background: #0a0a1a; }
         #viewer-container { width: 100vw; height: 100vh; }
@@ -31,546 +32,78 @@
     
     <div id="controls">
         <div class="control-group">
-            <span>时间点:</span>
-            <input type="range" id="time-slider" min="0" max="9" value="0">
-            <span id="time-display">0/9</span>
+            <span>Time slider:</span>
+            <input type="range" id="time-slider" min="0" max="300" value="0">
+            <span id="time-display">0/300</span>
         </div>
-        <button id="play-pause">播放</button>
-        <button id="reset-view">重置视图</button>
+        <button id="prev-time">Prev Time Frame</button>
+        <button id="next-time">Next Time Frame</button>
+        <button id="play-pause">Play/Pause</button>
+        <button id="prev-time", onclick="loadBrainSurface()">Load Surface</button>
+        <button id="reset-view">Reset View</button>
     </div>
     
     <div class="legend">
         <div class="legend-item">
-            <div class="color-block" style="background: #4CAF50;"></div>
-            <span>向量场 (低强度)</span>
-        </div>
-        <div class="legend-item">
-            <div class="color-block" style="background: #FFEB3B;"></div>
-            <span>向量场 (中强度)</span>
-        </div>
-        <div class="legend-item">
-            <div class="color-block" style="background: #F44336;"></div>
-            <span>向量场 (高强度)</span>
+            <div class="color-block" style="background: #4c87af;"></div>
+            <span>Phase Velocity Fields (vector fields)</span>
         </div>
         <div class="legend-item">
             <div class="color-block" style="background: linear-gradient(to right, red, blue);"></div>
-            <span>流线 (红:起点, 蓝:终点)</span>
+            <span> Streamlines (Red: Start, Blue: End)</span>
         </div>
         <div class="legend-item">
-            <div class="color-block" style="background: #FF9800;"></div>
-            <span>功能区域散点</span>
+            <div class="color-block" style="background: #fffb01;"></div>
+            <span>PVF singularities</span>
         </div>
     </div>
     
     <div id="info-panel">
-        <h3>大脑皮层4D可视化</h3>
-        <p>操作: 鼠标拖拽旋转 | 滚轮缩放 | 右键平移</p>
+        <h3>PVF Visualisation</h3>
+        <p>Operations: 鼠标拖拽旋转 | 滚轮缩放 | 右键平移</p>
         <p>点击功能区域散点查看详情</p>
     </div>
 
+
+    <div id="brainbrowser">
+        <p>Messages</p>
+    </div>
+
     <script>
-        // 全局变量
-        let scene, camera, renderer, controls;
-        let brainMesh;
-        let currentTime = 0;
-        const totalTimeSteps = 10;
-        let isPlaying = false;
-        let animationInterval;
-        
-        // 存储可视化对象的引用
-        let vectorObjects = [];
-        let streamlineObjects = [];
-        let featurePointObjects = [];
-        
-        // 模拟的4D数据生成器
-        class BrainDataGenerator {
-            /**
-             * 生成指定时间点的向量场数据
-             * @param {number} time - 时间步长（0~totalTimeSteps）
-             * @returns {Array} 向量数组，每个元素包含位置和方向
-             */
-            static generateVectorField(time) {
-                const vectors = [];
-                const sampleCount = 80; // 采样点数量
-                
-                for (let i = 0; i < sampleCount; i++) {
-                    // 球面上均匀分布的采样点
-                    const theta = Math.random() * Math.PI * 2;
-                    const phi = Math.acos(2 * Math.random() - 1);
-                    const radius = 1.1 + 0.1 * Math.random(); // 略大于单位球
-                    
-                    // 位置计算
-                    const x = radius * Math.sin(phi) * Math.cos(theta);
-                    const y = radius * Math.sin(phi) * Math.sin(theta);
-                    const z = radius * Math.cos(phi);
-                    
-                    // 随时间变化的方向（模拟大脑活动变化）
-                    const timeFactor = Math.sin(time * 0.5 + x + y);
-                    const dirX = 0.15 * (Math.sin(3 * x + time) + timeFactor);
-                    const dirY = 0.15 * (Math.cos(3 * y + time) - timeFactor);
-                    const dirZ = 0.15 * (Math.sin(3 * z + time) + timeFactor);
-                    
-                    // 强度计算（用于颜色映射）
-                    const intensity = Math.sqrt(dirX ** 2 + dirY ** 2 + dirZ ** 2);
-                    
-                    vectors.push({
-                        position: new THREE.Vector3(x, y, z),
-                        direction: new THREE.Vector3(dirX, dirY, dirZ).normalize(),
-                        intensity: intensity
-                    });
-                }
-                
-                return vectors;
-            }
-
-            static loadVectorField(scene) {
-                // 预留函数，实际数据加载逻辑可在此实现
-            }
-
-            /**
-             * 生成随时间变化的流线种子点
-             * @param {number} time - 时间步长
-             * @returns {Array} 种子点位置数组
-             */
-            static generateStreamlineSeeds(time) {
-                const seeds = [];
-                const seedCount = 15;
-                
-                for (let i = 0; i < seedCount; i++) {
-                    // 基于时间偏移生成动态种子点
-                    const offset = time * 0.1;
-                    const theta = (Math.random() + offset) * Math.PI * 2;
-                    const phi = Math.acos(2 * Math.random() - 1 + offset * 0.1);
-                    const radius = 1.05 + 0.05 * Math.random();
-                    
-                    seeds.push(new THREE.Vector3(
-                        radius * Math.sin(phi) * Math.cos(theta),
-                        radius * Math.sin(phi) * Math.sin(theta),
-                        radius * Math.cos(phi)
-                    ));
-                }
-                
-                return seeds;
-            }
-
-            /**
-             * 生成功能区域散点数据
-             * @returns {Array} 散点数组，包含位置和元数据
-             */
-            static generateFeaturePoints() {
-                // 模拟大脑主要功能区域（基于单位球）
-                return [
-                    { name: "前额叶", position: new THREE.Vector3(0.2, 0.9, 0.3), activity: 0.8 },
-                    { name: "顶叶", position: new THREE.Vector3(0, -0.2, 0.9), activity: 0.6 },
-                    { name: "颞叶", position: new THREE.Vector3(0.8, -0.3, -0.4), activity: 0.7 },
-                    { name: "枕叶", position: new THREE.Vector3(0, -0.9, 0.2), activity: 0.9 },
-                    { name: "运动皮层", position: new THREE.Vector3(0.9, 0.2, 0.3), activity: 0.5 },
-                    { name: "感觉皮层", position: new THREE.Vector3(-0.9, 0.2, 0.3), activity: 0.7 },
-                    { name: "语言区", position: new THREE.Vector3(0.7, 0.1, -0.7), activity: 0.6 }
-                ];
-            }
-            
-            /**
-             * 根据位置和时间获取向量
-             * @param {THREE.Vector3} position - 位置
-             * @param {number} time - 时间步长
-             * @returns {Object} 向量数据
-             */
-            static getVectorAtPosition(position, time) {
-                const x = position.x, y = position.y, z = position.z;
-                const timeFactor = Math.sin(time * 0.5 + x + y);
-                const dirX = 0.15 * (Math.sin(3 * x + time) + timeFactor);
-                const dirY = 0.15 * (Math.cos(3 * y + time) - timeFactor);
-                const dirZ = 0.15 * (Math.sin(3 * z + time) + timeFactor);
-                
-                return {
-                    direction: new THREE.Vector3(dirX, dirY, dirZ).normalize(),
-                    intensity: Math.sqrt(dirX ** 2 + dirY ** 2 + dirZ ** 2)
-                };
-            }
-        }
-        
-        // 初始化Three.js场景
-        function initThreeJS() {
-            // 创建场景
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x0a0a1a);
-            
-            // 创建相机
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 4;
-            
-            // 创建渲染器
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            document.getElementById('viewer-container').appendChild(renderer.domElement);
-            
-            // 创建控制器
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.screenSpacePanning = false;
-            controls.minDistance = 2;
-            controls.maxDistance = 10;
-            
-            // 添加灯光
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-            scene.add(ambientLight);
-            
-            const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
-            directionalLight1.position.set(5, 5, 5);
-            directionalLight1.castShadow = true;
-            scene.add(directionalLight1);
-            
-            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
-            directionalLight2.position.set(-5, -5, -5);
-            scene.add(directionalLight2);
-            
-            // 添加窗口大小调整监听
-            window.addEventListener('resize', onWindowResize);
-        }
-        
-        // 窗口大小调整
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-        
         // 使用BrainBrowser加载大脑皮层表面
         function loadBrainSurface() {
             // 创建BrainBrowser表面加载器
-            const surfaceLoader = new BrainBrowser.SurfaceLoader();
             
             // 加载示例表面数据（在实际应用中可替换为自己的数据）
             // BrainBrowser支持多种格式，如FreeSurfer, MNI OBJ等
-            const demoSurface = BrainBrowser.loader.demoFiles.get("surface");
-            
-            surfaceLoader.parseFromData(demoSurface, function(mesh_data) {
-                // 创建Three.js几何体
-                const geometry = new THREE.BufferGeometry();
-                
-                // 设置顶点
-                const vertices = new Float32Array(mesh_data.vertices);
-                geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-                
-                // 设置面
-                const faces = new Uint32Array(mesh_data.faces);
-                geometry.setIndex(new THREE.BufferAttribute(faces, 1));
-                
-                // 计算法线
-                geometry.computeVertexNormals();
-                
-                // 创建材质
-                const material = new THREE.MeshStandardMaterial({
-                    color: 0x2c3e50,
-                    roughness: 0.8,
-                    metalness: 0.2,
-                    transparent: true,
-                    opacity: 0.7
-                });
-                
-                // 创建网格并添加到场景
-                brainMesh = new THREE.Mesh(geometry, material);
-                brainMesh.scale.set(2, 2, 2); // 放大模型
-                brainMesh.castShadow = true;
-                brainMesh.receiveShadow = true;
-                scene.add(brainMesh);
-                
+            BrainBrowser.SurfaceViewer.start("brainbrowser", function(viewer) {
+
+            //Add an event listener.
+            viewer.addEventListener("displaymodel", function() {
+            console.log("We have a model!");
+            });
+
+            // Start rendering the scene.
+            viewer.render();
+
+            // Load a model into the scene.
+            viewer.loadModelFromURL("/Users/miaoc/Documents/Neuroscience/Data/MRI_FS/BUTTLynden/surf/lh.pial.T1.obj");
+            viewer.loadModelFromURL("/Users/miaoc/Documents/Neuroscience/Data/MRI_FS/BUTTLynden/surf/rh.pial.T1.obj");
+
+            const div = document.getElementById("brainbrowser");
+
+            // 2️⃣ 修改内容
+            div.innerHTML = "<b>Loading brain surfaces</b>";
+
+            // Hook viewer behaviour into UI.
+            $("#wireframe").change(function(e) {
+            viewer.setWireframe($(this).is(":checked"));
+            });        
+
                 // 初始化完成后，开始可视化
-                initVisualization();
+                // initVisualization();
             });
         }
-        
-        // 初始化可视化元素
-        function initVisualization() {
-            // 初始化UI控件
-            initControls();
-            
-            // 初始化功能区域散点
-            initFeaturePoints();
-            
-            // 初始更新时间点0的数据
-            updateVisualization(0);
-            
-            // 添加点击交互
-            initInteraction();
-            
-            // 开始渲染循环
-            animate();
-        }
-        
-        // 初始化UI控件
-        function initControls() {
-            const timeSlider = document.getElementById("time-slider");
-            const timeDisplay = document.getElementById("time-display");
-            const playPauseButton = document.getElementById("play-pause");
-            const resetViewButton = document.getElementById("reset-view");
-            
-            // 设置时间滑块
-            timeSlider.max = totalTimeSteps - 1;
-            
-            // 更新时间显示
-            function updateTimeDisplay() {
-                timeDisplay.textContent = `${currentTime}/${totalTimeSteps - 1}`;
-            }
-            
-            // 时间滑块事件
-            timeSlider.addEventListener("input", function() {
-                currentTime = parseInt(this.value);
-                updateTimeDisplay();
-                updateVisualization(currentTime);
-            });
-            
-            // 播放/暂停按钮事件
-            playPauseButton.addEventListener("click", function() {
-                isPlaying = !isPlaying;
-                
-                if (isPlaying) {
-                    this.textContent = "暂停";
-                    animationInterval = setInterval(function() {
-                        currentTime = (currentTime + 1) % totalTimeSteps;
-                        timeSlider.value = currentTime;
-                        updateTimeDisplay();
-                        updateVisualization(currentTime);
-                    }, 500); // 每500ms更新一次
-                } else {
-                    this.textContent = "播放";
-                    clearInterval(animationInterval);
-                }
-            });
-            
-            // 重置视图按钮事件
-            resetViewButton.addEventListener("click", function() {
-                controls.reset();
-            });
-            
-            // 初始化时间显示
-            updateTimeDisplay();
-        }
-        
-        // 初始化功能区域散点
-        function initFeaturePoints() {
-            const featurePoints = BrainDataGenerator.generateFeaturePoints();
-            const pointMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0xFF9800,
-                emissive: 0xFF9800,
-                emissiveIntensity: 0.6
-            });
-            
-            featurePoints.forEach(point => {
-                // 创建散点
-                const geometry = new THREE.SphereGeometry(0.08, 16, 16);
-                const mesh = new THREE.Mesh(geometry, pointMaterial);
-                
-                // 缩放位置以匹配大脑模型
-                mesh.position.copy(point.position.clone().multiplyScalar(2));
-                
-                // 存储元数据
-                mesh.userData = {
-                    type: 'feature',
-                    data: point
-                };
-                
-                scene.add(mesh);
-                featurePointObjects.push(mesh);
-            });
-        }
-        
-        // 更新所有可视化元素
-        function updateVisualization(time) {
-            // 清除旧的向量和流线
-            clearVectorObjects();
-            clearStreamlineObjects();
-            
-            // 更新向量场
-            updateVectorField(time);
-            
-            // 更新流线
-            updateStreamlines(time);
-        }
-        
-        // 更新向量场可视化
-        function updateVectorField(time) {
-            const vectors = BrainDataGenerator.generateVectorField(time);
-            
-            vectors.forEach(vector => {
-                // 根据强度确定颜色
-                const color = getIntensityColor(vector.intensity);
-                
-                // 创建箭头
-                createArrow(
-                    vector.position.clone().multiplyScalar(2), // 缩放位置
-                    vector.direction,
-                    color
-                );
-            });
-        }
-        
-        // 创建箭头
-        function createArrow(position, direction, color) {
-            const arrowLength = 0.3;
-            const arrowWidth = 0.03;
-            
-            // 计算箭头端点
-            const endPoint = position.clone().add(direction.clone().multiplyScalar(arrowLength));
-            
-            // 创建线段
-            const lineGeometry = new THREE.BufferGeometry().setFromPoints([
-                position,
-                endPoint
-            ]);
-            const lineMaterial = new THREE.LineBasicMaterial({ 
-                color: color,
-                linewidth: 2
-            });
-            const line = new THREE.Line(lineGeometry, lineMaterial);
-            scene.add(line);
-            vectorObjects.push(line);
-            
-            // 创建箭头尖端
-            const coneGeometry = new THREE.ConeGeometry(arrowWidth * 2, arrowWidth * 4, 12);
-            const coneMaterial = new THREE.MeshStandardMaterial({ color: color });
-            const cone = new THREE.Mesh(coneGeometry, coneMaterial);
-            
-            cone.position.copy(endPoint);
-            cone.lookAt(position);
-            cone.rotateX(Math.PI / 2);
-            
-            scene.add(cone);
-            vectorObjects.push(cone);
-        }
-        
-        // 更新流线可视化
-        function updateStreamlines(time) {
-            const seeds = BrainDataGenerator.generateStreamlineSeeds(time);
-            const stepCount = 35; // 流线步数
-            const stepSize = 0.07; // 每步长度
-            
-            seeds.forEach(seed => {
-                const points = [seed.clone().multiplyScalar(2)]; // 缩放位置
-                let currentPos = seed.clone();
-                
-                // 生成流线点
-                for (let i = 0; i < stepCount; i++) {
-                    // 获取当前位置的向量
-                    const vector = BrainDataGenerator.getVectorAtPosition(currentPos, time);
-                    
-                    // 计算下一步位置
-                    currentPos.add(vector.direction.clone().multiplyScalar(stepSize));
-                    
-                    // 检查是否超出大脑表面范围
-                    if (currentPos.length() > 1.4) break;
-                    
-                    points.push(currentPos.clone().multiplyScalar(2)); // 缩放位置
-                }
-                
-                // 创建流线
-                if (points.length > 1) {
-                    createColoredStreamline(points);
-                }
-            });
-        }
-        
-        // 创建带颜色渐变的流线（红到蓝）
-        function createColoredStreamline(points) {
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            
-            // 创建颜色数组，从红色到蓝色渐变
-            const colors = new Float32Array(points.length * 3);
-            
-            for (let i = 0; i < points.length; i++) {
-                const ratio = i / (points.length - 1); // 0到1的比例
-                
-                // 红色到蓝色的渐变
-                colors[i * 3] = 1 - ratio;       // R通道 (1到0)
-                colors[i * 3 + 1] = 0;           // G通道 (保持0)
-                colors[i * 3 + 2] = ratio;       // B通道 (0到1)
-            }
-            
-            // 设置颜色属性
-            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-            
-            // 创建带顶点颜色的材质
-            const material = new THREE.LineBasicMaterial({
-                vertexColors: THREE.VertexColors,
-                linewidth: 1.5,
-                transparent: true,
-                opacity: 0.8
-            });
-            
-            const line = new THREE.Line(geometry, material);
-            scene.add(line);
-            streamlineObjects.push(line);
-        }
-        
-        // 根据强度获取颜色（绿->黄->红）
-        function getIntensityColor(intensity) {
-            const normalized = Math.min(intensity / 0.25, 1); // 归一化到0-1范围
-            
-            if (normalized < 0.5) {
-                // 绿到黄
-                return new THREE.Color(normalized * 2, 1, 0);
-            } else {
-                // 黄到红
-                return new THREE.Color(1, 2 - normalized * 2, 0);
-            }
-        }
-        
-        // 清除向量对象
-        function clearVectorObjects() {
-            vectorObjects.forEach(obj => scene.remove(obj));
-            vectorObjects = [];
-        }
-        
-        // 清除流线对象
-        function clearStreamlineObjects() {
-            streamlineObjects.forEach(obj => scene.remove(obj));
-            streamlineObjects = [];
-        }
-        
-        // 初始化交互
-        function initInteraction() {
-            // 添加点击事件监听器
-            renderer.domElement.addEventListener("click", function(event) {
-                // 计算点击位置的归一化设备坐标
-                const rect = renderer.domElement.getBoundingClientRect();
-                const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-                const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-                
-                // 创建射线投射器
-                const raycaster = new THREE.Raycaster();
-                raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
-                
-                // 检测与功能点的交集
-                const intersects = raycaster.intersectObjects(featurePointObjects);
-                
-                if (intersects.length > 0) {
-                    const pickedObject = intersects[0].object;
-                    if (pickedObject.userData && pickedObject.userData.type === 'feature') {
-                        const data = pickedObject.userData.data;
-                        alert(`功能区域: ${data.name}\n活动强度: ${data.activity.toFixed(2)}`);
-                    }
-                }
-            });
-        }
-        
-        // 动画循环
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
-        
-        // 初始化应用
-        function init() {
-            initThreeJS();
-            loadBrainSurface();
-        }
-        
-        // 当页面加载完成后初始化
-        window.addEventListener("load", init);
     </script>
 </body>
 </html>
