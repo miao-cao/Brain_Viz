@@ -4,17 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PVF visualisation</title>
-    <!-- Three.js 库 -->
+    <!-- Three.js library -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
-    <!-- BrainBrowser 库 -->
-    <script src="https://cdn.jsdelivr.net/npm/brainbrowser@2.5.1/lib/brainbrowser.min.js"></script>
-    <!-- HDF5.js 库 (处理HDF5数据) -->
-    <script src="https://cdn.jsdelivr.net/npm/hdf5-js@latest/dist/hdf5.js"></script>
+    <!-- BrainBrowser library -->
+    <script src="https://cdn.jsdelivr.net/npm/brainbrowser@2.3.0/lib/brainbrowser.min.js"></script>
+    <!-- HDF5.js library (HDF5 data) -->
+    <script src="./build/brainbrowser-2.5.2/brainbrowser.surface-viewer.min.js"></script>"></script>
+    <script src="./build/brainbrowser-2.5.2/brainbrowser.volume-viewer.min.js"></script>"></script>
     <!-- <script src="viz_brain_models.js"></script> -->
     <style>
         body { margin: 0; overflow: hidden; background: #0a0a1a; }
-        #viewer-container { width: 100vw; height: 100vh; }
+        
         #controls { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; color: white; font-family: Arial; z-index: 100; display: flex; align-items: center; gap: 15px; }
         .control-group { display: flex; align-items: center; gap: 8px; }
         button { background: #4CAF50; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
@@ -25,10 +26,10 @@
         .legend-item { margin: 5px 0; display: flex; align-items: center; }
         .color-block { width: 15px; height: 15px; margin-right: 8px; }
         #info-panel { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; color: white; font-family: Arial; z-index: 100; }
+        #brainbrowser { position: absolute; top: 500px; left: 400px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; color: white; font-family: Arial; z-index: 5000; }
     </style>
 </head>
 <body>
-    <div id="viewer-container"></div>
     
     <div id="controls">
         <div class="control-group">
@@ -39,7 +40,10 @@
         <button id="prev-time">Prev Time Frame</button>
         <button id="next-time">Next Time Frame</button>
         <button id="play-pause">Play/Pause</button>
-        <button id="prev-time", onclick="loadBrainSurface()">Load Surface</button>
+        <button id="load-surf", onclick="loadBrainSurface()">Load Surface</button>
+        <button id="load-pvfs", onclick="loadBrainSurface()">Load PVFs</button>
+        <button id="load-sing", onclick="loadBrainSurface()">Load Singularities</button>
+        <button id="load-stln", onclick="loadBrainSurface()">Load Streamlines</button>
         <button id="reset-view">Reset View</button>
     </div>
     
@@ -58,25 +62,23 @@
         </div>
     </div>
     
-    <div id="info-panel">
+    <div id="info-panel", class="info-panel">
         <h3>PVF Visualisation</h3>
-        <p>Operations: 鼠标拖拽旋转 | 滚轮缩放 | 右键平移</p>
-        <p>点击功能区域散点查看详情</p>
+        <p>Operations: Mouse rotate | 滚轮缩放 | 右键平移</p>
     </div>
 
 
-    <div id="brainbrowser">
-        <p>Messages</p>
-    </div>
+    <div id="brainbrowser", class="viewer">Message</div>
 
     <script>
-        // 使用BrainBrowser加载大脑皮层表面
-        function loadBrainSurface() {
-            // 创建BrainBrowser表面加载器
-            
-            // 加载示例表面数据（在实际应用中可替换为自己的数据）
-            // BrainBrowser支持多种格式，如FreeSurfer, MNI OBJ等
-            BrainBrowser.SurfaceViewer.start("brainbrowser", function(viewer) {
+
+        // --- 1. 配置和初始化 ---
+
+        // 告诉 BrainBrowser 其核心文件的基础路径
+        // 这对于加载 WebWorker 脚本等内部资源至关重要
+        BrainBrowser.config.set("base-path", "build/brainbrowser-2.5.2");
+
+        BrainBrowser.SurfaceViewer.start("brainbrowser", function(viewer) {
 
             //Add an event listener.
             viewer.addEventListener("displaymodel", function() {
@@ -87,23 +89,14 @@
             viewer.render();
 
             // Load a model into the scene.
-            viewer.loadModelFromURL("/Users/miaoc/Documents/Neuroscience/Data/MRI_FS/BUTTLynden/surf/lh.pial.T1.obj");
-            viewer.loadModelFromURL("/Users/miaoc/Documents/Neuroscience/Data/MRI_FS/BUTTLynden/surf/rh.pial.T1.obj");
-
-            const div = document.getElementById("brainbrowser");
-
-            // 2️⃣ 修改内容
-            div.innerHTML = "<b>Loading brain surfaces</b>";
+            viewer.loadModelFromURL("/models/brain_surface.obj");
 
             // Hook viewer behaviour into UI.
             $("#wireframe").change(function(e) {
             viewer.setWireframe($(this).is(":checked"));
-            });        
-
-                // 初始化完成后，开始可视化
-                // initVisualization();
             });
-        }
+
+        });
     </script>
 </body>
 </html>
