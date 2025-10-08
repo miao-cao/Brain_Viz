@@ -12,6 +12,7 @@
     <!-- HDF5.js library (HDF5 data) -->
     <script src="./build/brainbrowser-2.5.2/brainbrowser.surface-viewer.min.js"></script>"></script>
     <script src="./build/brainbrowser-2.5.2/brainbrowser.volume-viewer.min.js"></script>"></script>
+    <script src="https://cdn.jsdelivr.net/npm/h5wasm@0.8.6/dist/iife/h5wasm.min.js"></script>
     <!-- <script src="viz_brain_models.js"></script> -->
     <style>
         body { margin: 0; overflow: hidden; background: #0a0a1a; }
@@ -41,8 +42,9 @@
         <button id="next-time">Next Time Frame</button>
         <button id="play-pause">Play/Pause</button>
         <button id="load-surf", onclick="loadBrainSurface()">Load Surface</button>
-        <button id="load-pvfs", onclick="loadBrainSurface()">Load PVFs</button>
-        <button id="load-sing", onclick="loadBrainSurface()">Load Singularities</button>
+        <button id="load-pvfs", onclick="loadPVFHD5File()">Load PVFs</button>
+        <input type="file" id="h5FilePicker">
+        <button id="load-sing", onclick="readH5File()">Load Singularities</button>
         <button id="load-stln", onclick="loadBrainSurface()">Load Streamlines</button>
         <button id="reset-view">Reset View</button>
     </div>
@@ -64,39 +66,88 @@
     
     <div id="info-panel", class="info-panel">
         <h3>PVF Visualisation</h3>
-        <p>Operations: Mouse rotate | 滚轮缩放 | 右键平移</p>
+        <p>Mouse Operations: Left Button Rotate | Scroll Zoom in/out | Right Button </p>
     </div>
 
 
-    <div id="brainbrowser", class="viewer">Message</div>
+    <div id="brainbrowser", class="viewer">Messages:</div>
 
     <script>
 
+
+        document.getElementById('h5FilePicker').addEventListener('change', async (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            await h5wasm.ready;
+            
+            // 2. 加载文件
+            const data = await file.arrayBuffer();
+            const fileId = await h5wasm.FS_createDataFile('/', 'H5data.h5', data, true, false, false);
+            const h5 = new h5wasm.File('/H5data.h5', 'r');
+            
+            // 3. 访问数据集
+            const dataset = h5.get('pvf_data/validate_pvf/sub-BUTTLynden_EEG_ictal_acq-EyesClosed_run-1_velocityfields_20250618182906_h5py.h5');
+            
+            // 4. 读取数据
+            const array = await dataset.value;
+            
+            console.log('数据形状:', dataset.shape);
+            console.log('数据类型:', dataset.dtype);
+            console.log('数据内容:', array);
+            
+            // 5. 清理资源
+            h5.close();
+            h5wasm.FS_unlink('pvf_data/validate_pvf/sub-BUTTLynden_EEG_ictal_acq-EyesClosed_run-1_velocityfields_20250618182906_h5py.h5');
+        }
+        });
         // --- 1. 配置和初始化 ---
 
         // 告诉 BrainBrowser 其核心文件的基础路径
         // 这对于加载 WebWorker 脚本等内部资源至关重要
-        BrainBrowser.config.set("base-path", "build/brainbrowser-2.5.2");
+        // BrainBrowser.config.set("base-path", "build/brainbrowser-2.5.2");
 
-        BrainBrowser.SurfaceViewer.start("brainbrowser", function(viewer) {
+        // BrainBrowser.SurfaceViewer.start("brainbrowser", function(viewer) {
+        //     //Add an event listener.
+        //     viewer.addEventListener("displaymodel", function() {
+        //     console.log("We have a model!");
+        //     });
 
-            //Add an event listener.
-            viewer.addEventListener("displaymodel", function() {
-            console.log("We have a model!");
+        //     // Start rendering the scene.
+        //     viewer.render();
+
+        //     // Load a model into the scene.
+        //     viewer.loadModelFromURL("fs_data/BUTTLynden/surf/lh.pial.T1.obj");
+        //     viewer.loadModelFromURL("fs_data/BUTTLynden/surf/rh.pial.T1.obj");
+
+        //     // Hook viewer behaviour into UI.
+        //     $("#wireframe").change(function(e) {
+        //     viewer.setWireframe($(this).is(":checked"));
+        //     });
+        // });
+        // function loadPVFFromFile() {
+        //     alert("Loading brain surface...");
+        // }
+        
+        function loadPVFHD5File(url) {
+            url="pvf_data/validate_pvf/sub-BUTTLynden_EEG_ictal_acq-EyesClosed_run-1_velocityfields_20250618182906_h5py.h5";
+            return h5wasm.ready.then(() => {
+                return h5wasm.open(url, 'r').then(file => {
+                    const data = {};
+                    // 假设文件中有这些数据集
+                    const datasets = ['mask', 'vx', 'vy', 'vz'];
+                    datasets.forEach(name => {
+                        if (file.exists(name)) {
+                            const dataset = file.get(name);
+                            data[name] = dataset.toArray();
+                        } else {
+                            console.warn(`Dataset ${name} does not exist in the file.`);
+                        }
+                    });
+                    file.close();
+                    return data;
+                });
             });
-
-            // Start rendering the scene.
-            viewer.render();
-
-            // Load a model into the scene.
-            viewer.loadModelFromURL("/models/brain_surface.obj");
-
-            // Hook viewer behaviour into UI.
-            $("#wireframe").change(function(e) {
-            viewer.setWireframe($(this).is(":checked"));
-            });
-
-        });
+        }
     </script>
 </body>
 </html>
