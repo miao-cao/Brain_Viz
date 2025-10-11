@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>脑表面可视化工具 - 真实皮层表面</title>
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>脑表面可视化工具</h1>
+            <p class="subtitle">基于BrainBrowser的3D脑表面模型查看器</p>
+        </header>
+        
+        <div class="control-panel">
+            <div class="control-section">
+                <h3><i>🧠</i> 脑表面选择</h3>
+                <div class="control-group">
+                    <label for="subject-select">选择受试者</label>
+                    <select id="subject-select">
+                        <option value="p1">P1 - 受试者1</option>
+                        <option value="p35">P35 - 受试者35</option>
+                        <option value="p48">P48 - 受试者48</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>皮层表面显示</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="show-left-hemisphere" checked>
+                        <label for="show-left-hemisphere">显示左半球 (lh.pial.obj)</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="show-right-hemisphere" checked>
+                        <label for="show-right-hemisphere">显示右半球 (rh.pial.obj)</label>
+                    </div>
+                </div>
+                
+                <button id="load-brain" class="button">加载选定受试者</button>
+                
+                <div class="control-group" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                    <label>自定义文件加载</label>
+                    <input type="file" id="custom-obj-file" accept=".obj">
+                    <button id="load-custom-obj" class="button secondary">加载自定义OBJ文件</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3><i>⚡</i> 速度场可视化</h3>
+                <div class="control-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="show-velocity-field">
+                        <label for="show-velocity-field">显示速度场</label>
+                    </div>
+                </div>
+                
+                <div id="velocity-field-controls" style="display: none;">
+                    <div class="control-group">
+                        <label for="velocity-file-select">选择速度场文件</label>
+                        <select id="velocity-file-select">
+                            <option value="">-- 请选择 --</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="time-step">时间步: <span id="time-step-value">0</span></label>
+                        <input type="range" id="time-step" min="0" max="100" value="0">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="arrow-size">箭头大小: <span id="arrow-size-value">1.0</span></label>
+                        <input type="range" id="arrow-size" min="0.1" max="5.0" step="0.1" value="1.0">
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="arrow-color">箭头颜色</label>
+                        <input type="color" id="arrow-color" value="#000000">
+                    </div>
+                    
+                    <div class="control-group" style="display: flex; gap: 10px;">
+                        <button id="play-velocity" class="button secondary">播放</button>
+                        <button id="stop-velocity" class="button secondary">停止</button>
+                    </div>
+                </div>
+            </div>
+
+            
+            <div class="control-section">
+                <h3><i>🎨</i> 外观设置</h3>
+                <div class="control-group">
+                    <label for="background-color">背景颜色</label>
+                    <select id="background-color">
+                        <option value="0x000000">黑色</option>
+                        <option value="0xffffff">白色</option>
+                        <option value="0x1a2a6c">深蓝色</option>
+                        <option value="0x2d1b69">深紫色</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="surface-color">重建表面颜色</label>
+                    <input type="color" id="surface-color" value="#4facfe">
+                </div>
+                
+                <div class="control-group">
+                    <label for="left-hemisphere-color">左半球颜色</label>
+                    <input type="color" id="left-hemisphere-color" value="#ff6b6b">
+                </div>
+                
+                <div class="control-group">
+                    <label for="right-hemisphere-color">右半球颜色</label>
+                    <input type="color" id="right-hemisphere-color" value="#48dbfb">
+                </div>
+                
+                <div class="control-group">
+                    <label for="transparency">重建表面透明度: <span id="transparency-value">0%</span></label>
+                    <input type="range" id="transparency" min="0" max="100" value="0">
+                </div>
+                
+                <div class="control-group">
+                    <label for="cortex-transparency">皮层表面透明度: <span id="cortex-transparency-value">30%</span></label>
+                    <input type="range" id="cortex-transparency" min="0" max="100" value="30">
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <h3><i>⚙️</i> 视图控制</h3>
+                <div class="control-group">
+                    <label for="view-mode">视图模式</label>
+                    <select id="view-mode">
+                        <option value="solid">实体</option>
+                        <option value="wireframe">线框</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="rotation">自动旋转</label>
+                    <select id="rotation">
+                        <option value="off">关闭</option>
+                        <option value="slow">慢速</option>
+                        <option value="medium">中速</option>
+                        <option value="fast">快速</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="light-intensity">光照强度: <span id="light-intensity-value">70%</span></label>
+                    <input type="range" id="light-intensity" min="0" max="100" value="70">
+                </div>
+                
+                <button id="reset-view" class="button">重置视图</button>
+                <button id="screenshot" class="button secondary">截取屏幕</button>
+            </div>
+            
+            <div class="control-section">
+                <h3><i>🔄</i> 旋转控制</h3>
+                <div class="control-group">
+                    <label for="x-rotation">X轴旋转: <span id="x-rotation-value">0°</span></label>
+                    <input type="range" id="x-rotation" min="0" max="360" value="0">
+                </div>
+                
+                <div class="control-group">
+                    <label for="y-rotation">Y轴旋转: <span id="y-rotation-value">0°</span></label>
+                    <input type="range" id="y-rotation" min="0" max="360" value="0">
+                </div>
+                
+                <div class="control-group">
+                    <label for="z-rotation">Z轴旋转: <span id="z-rotation-value">0°</span></label>
+                    <input type="range" id="z-rotation" min="0" max="360" value="0">
+                </div>
+            </div>
+        </div>
+
+
+        <div class="viewer-container">
+            <div class="viewer-header">
+                <div class="viewer-title">3D脑表面查看器</div>
+                <div class="viewer-stats">
+                    <span>顶点数: <span id="vertex-count">0</span></span>
+                    <span>面数: <span id="face-count">0</span></span>
+                    <span>文件: <span id="file-name">未加载</span></span>
+                </div>
+            </div>
+            <div class="viewer-content">
+                <div id="brainbrowser"></div>
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <p>正在加载脑表面模型...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h3>模型信息</h3>
+            <div class="info-content">
+                <div class="info-item">
+                    <h4>当前受试者</h4>
+                    <p id="current-subject">P1 - 受试者1</p>
+                </div>
+                <div class="info-item">
+                    <h4>重建表面</h4>
+                    <p id="reconstructed-surface">sub-ccepAgeUMCU01_reconstructed_surface.ply</p>
+                </div>
+                <div class="info-item">
+                    <h4>皮层表面</h4>
+                    <p id="cortex-surface">lh.pial.obj, rh.pial.obj</p>
+                </div>
+                <div class="info-item">
+                    <h4>交互提示</h4>
+                    <p>左键拖动: 任意旋转 | 滚轮: 缩放 | 右键拖动: 平移</p>
+                </div>
+            </div>
+        </div>
+
+
+
+        
+
+        
+        <footer>
+            <p>基于 BrainBrowser 构建的脑表面可视化工具 | 支持真实皮层表面和完全自由旋转</p>
+        </footer>
+    </div>
+
+    <!-- 外部库 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/TrackballControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/PLYLoader.js"></script>
+    
+    <!-- 自定义脚本 -->
+    <script src="js/brain-loader.js"></script>
+    <script src="js/brain-surface-viewer.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/velocity-field-loader.js"></script>
+    <script src="js/velocity-field-visualizer.js"></script>
+</body>
+</html>
