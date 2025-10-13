@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Vector Field Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/MTLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: '#1E293B',
+                        light: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .vector-field-container {
+                height: calc(100vh - 8rem);
+            }
+            .sidebar {
+                width: 320px;
+                transition: transform 0.3s ease-in-out;
+            }
+            .sidebar-collapsed {
+                transform: translateX(-320px);
+            }
+            .main-expanded {
+                margin-left: 0;
+            }
+            .panel-gradient {
+                background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%);
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-dark text-light overflow-hidden">
+    <!-- Header -->
+    <header class="bg-dark/80 backdrop-blur-md fixed top-0 left-0 right-0 z-50 border-b border-white/10">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <button id="sidebar-toggle" class="lg:hidden text-light p-2 rounded-full hover:bg-white/10 transition-colors">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="text-xl font-semibold text-light flex items-center gap-2">
+                    <i class="fas fa-cube text-primary"></i>
+                    <span>VectorField3D</span>
+                </h1>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <button id="reset-view" class="text-light/80 hover:text-light transition-colors p-2 rounded-full hover:bg-white/10">
+                    <i class="fas fa-redo"></i>
+                </button>
+                <button id="toggle-fullscreen" class="text-light/80 hover:text-light transition-colors p-2 rounded-full hover:bg-white/10">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button id="export-data" class="text-light/80 hover:text-light transition-colors p-2 rounded-full hover:bg-white/10">
+                    <i class="fas fa-download"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="pt-16 flex h-screen">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar fixed left-0 top-16 bottom-0 bg-dark/95 backdrop-blur-md border-r border-white/10 p-4 overflow-y-auto z-40">
+            <div class="space-y-6">
+                <!-- Vector Field Settings -->
+                <div class="panel-gradient rounded-xl p-4 border border-white/10">
+                    <h2 class="text-lg font-medium mb-3 flex items-center gap-2">
+                        <i class="fas fa-sliders-h text-primary"></i>
+                        Field Settings
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-light/80 mb-1">Field Type</label>
+                            <select id="field-type" class="w-full bg-dark/50 border border-white/10 rounded-lg px-3 py-2 text-light focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                <option value="random">Random</option>
+                                <option value="curl">Curl</option>
+                                <option value="divergence">Divergence</option>
+                                <option value="vortex">Vortex</option>
+                                <option value="custom">Custom</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-light/80 mb-1">Resolution</label>
+                            <input type="range" id="resolution" min="3" max="20" value="8" 
+                                class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary">
+                            <div class="flex justify-between text-xs text-light/60 mt-1">
+                                <span>Low</span>
+                                <span>High</span>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-light/80 mb-1">Vector Scale</label>
+                            <input type="range" id="vector-scale" min="0.1" max="2" step="0.1" value="0.8" 
+                                class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-light/80 mb-1">Show Grid</label>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="show-grid" checked 
+                                    class="w-4 h-4 text-primary bg-dark/50 border border-white/10 rounded focus:ring-primary/50">
+                                <label for="show-grid" class="ml-2 text-sm text-light/80">Display coordinate grid</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Visualization Settings -->
+                <div class="panel-gradient rounded-xl p-4 border border-white/10">
+                    <h2 class="text-lg font-medium mb-3 flex items-center gap-2">
+                        <i class="fas fa-eye text-primary"></i>
+                        Visualization
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-light/80 mb-1">Color Scheme</label>
+                            <select id="color-scheme" class="w-full bg-dark/50 border border-white/10 rounded-lg px-3 py-2 text-light focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                <option value="speed">Speed Magnitude</option>
+                                <option value="direction">Direction</option>
+                                <option value="temperature">Temperature Map</option>
+                                <option value="rainbow">Rainbow</option>
+                                <option value="grayscale">Grayscale</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-light/80 mb-1">Vector Display</label>
+                            <select id="vector-display" class="w-full bg-dark/50 border border-white/10 rounded-lg px-3 py-2 text-light focus:outline-none focus:ring-2 focus:ring-primary/50">
+                                <option value="arrows">Arrows</option>
+                                <option value="lines">Lines</option>
+                                <option value="tubes">Tubes</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-light/80 mb-1">Show Streamlines</label>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="show-streamlines" 
+                                    class="w-4 h-4 text-primary bg-dark/50 border border-white/10 rounded focus:ring-primary/50">
+                                <label for="show-streamlines" class="ml-2 text-sm text-light/80">Display particle paths</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Animation Settings -->
+                <div class="panel-gradient rounded-xl p-4 border border-white/10">
+                    <h2 class="text-lg font-medium mb-3 flex items-center gap-2">
+                        <i class="fas fa-play text-primary"></i>
+                        Animation
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-light/80 mb-1">Animation Speed</label>
+                            <input type="range" id="animation-speed" min="0.1" max="5" step="0.1" value="1" 
+                                class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-light/80 mb-1">Particles</label>
+                            <input type="range" id="particle-count" min="10" max="500" step="10" value="100" 
+                                class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary">
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button id="play-pause" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-center gap-2">
+                                <i class="fas fa-play"></i>
+                                <span>Play</span>
+                            </button>
+                            <button id="reset-animation" class="flex-1 bg-white/10 hover:bg-white/20 text-light rounded-lg py-2 px-4 transition-colors flex items-center justify-center gap-2">
+                                <i class="fas fa-redo"></i>
+                                <span>Reset</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Visualization Area -->
+        <div id="visualization-container" class="flex-1 vector-field-container relative">
+            <canvas id="vector-field-canvas"></canvas>
+            
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" class="absolute inset-0 flex items-center justify-center bg-dark/70 backdrop-blur-sm z-30">
+                <div class="text-center">
+                    <div class="inline-block w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"></div>
+                    <p class="text-light/80">Loading vector field...</p>
+                </div>
+            </div>
+            
+            <!-- Stats Overlay -->
+            <div id="stats-overlay" class="absolute bottom-4 right-4 bg-dark/70 backdrop-blur-sm rounded-lg p-3 border border-white/10 text-xs text-light/80">
+                <div class="flex items-center gap-2 mb-1">
+                    <i class="fas fa-info-circle text-primary"></i>
+                    <span class="font-medium">Vector Field Stats</span>
+                </div>
+                <div class="space-y-1">
+                    <div class="flex justify-between">
+                        <span>Resolution:</span>
+                        <span id="stats-resolution">8x8x8</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Vectors:</span>
+                        <span id="stats-vectors">512</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Max Magnitude:</span>
+                        <span id="stats-max-magnitude">N/A</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>FPS:</span>
+                        <span id="stats-fps">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 lg:hidden hidden"></div>
+
+    <script>
+        // DOM Elements
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const visualizationContainer = document.getElementById('visualization-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const resetViewBtn = document.getElementById('reset-view');
+        const toggleFullscreenBtn = document.getElementById('toggle-fullscreen');
+        const exportDataBtn = document.getElementById('export-data');
+        
+        // Three.js Scene Variables
+        let scene, camera, renderer, controls;
+        let vectorField = [];
+        let vectorObjects = [];
+        let particles = [];
+        let gridHelper;
+        let animationId;
+        let isAnimating = false;
+        let lastTime = 0;
+        let fps = 0;
+        
+        // Settings
+        let settings = {
+            fieldType: 'random',
+            resolution: 8,
+            vectorScale: 0.8,
+            showGrid: true,
+            colorScheme: 'speed',
+            vectorDisplay: 'arrows',
+            showStreamlines: false,
+            animationSpeed: 1,
+            particleCount: 100
+        };
+        
+        // Initialize the application
+        function init() {
+            // Setup sidebar toggle
+            sidebarToggle.addEventListener('click', toggleSidebar);
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+            
+            // Setup event listeners for settings changes
+            setupSettingsListeners();
+            
+            // Setup Three.js scene
+            setupThreeJS();
+            
+            // Generate initial vector field
+            generateVectorField();
+            
+            // Create vector objects
+            createVectorObjects();
+            
+            // Setup stats
+            updateStats();
+            
+            // Start animation loop
+            animate();
+            
+            // Hide loading indicator
+            setTimeout(() => {
+                loadingIndicator.classList.add('opacity-0');
+                setTimeout(() => {
+                    loadingIndicator.classList.add('hidden');
+                }, 300);
+            }, 800);
+        }
+        
+        // Toggle sidebar
+        function toggleSidebar() {
+            sidebar.classList.toggle('sidebar-collapsed');
+            sidebarOverlay.classList.toggle('hidden');
+        }
+        
+        // Setup Three.js scene
+        function setupThreeJS() {
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1E293B);
+            
+            // Create camera
+            camera = new THREE.PerspectiveCamera(
+                60, 
+                visualizationContainer.clientWidth / visualizationContainer.clientHeight, 
+                0.1, 
+                1000
+            );
+            camera.position.set(10, 10, 10);
+            camera.lookAt(0, 0, 0);
+            
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({
+                canvas: document.getElementById('vector-field-canvas'),
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(visualizationContainer.clientWidth, visualizationContainer.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            
+            // Add ambient light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            // Add directional light
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 7.5);
+            scene.add(directionalLight);
+            
+            // Add grid helper
+            gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x333333);
+            scene.add(gridHelper);
+            
+            // Add orbit controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.addEventListener('change', () => {
+                // Update stats when camera moves
+                updateStats();
+            });
+            
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+            
+            // Reset view button
+            resetViewBtn.addEventListener('click', resetView);
+            
+            // Toggle fullscreen button
+            toggleFullscreenBtn.addEventListener('click', toggleFullscreen);
+            
+            // Export data button
+            exportDataBtn.addEventListener('click', exportVectorFieldData);
+        }
+        
+        // Handle window resize
+        function onWindowResize() {
+            camera.aspect = visualizationContainer.clientWidth / visualizationContainer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(visualizationContainer.clientWidth, visualizationContainer.clientHeight);
+        }
+        
+        // Reset camera view
+        function resetView() {
+            camera.position.set(10, 10, 10);
+            camera.lookAt(0, 0, 0);
+            controls.reset();
+        }
+        
+        // Toggle fullscreen
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+        
+        // Setup settings listeners
+        function setupSettingsListeners() {
+            // Field type
+            document.getElementById('field-type').addEventListener('change', (e) => {
+                settings.fieldType = e.target.value;
+                regenerateVectorField();
+            });
+            
+            // Resolution
+            document.getElementById('resolution').addEventListener('input', (e) => {
+                settings.resolution = parseInt(e.target.value);
+                regenerateVectorField();
+            });
+            
+            // Vector scale
+            document.getElementById('vector-scale').addEventListener('input', (e) => {
+                settings.vectorScale = parseFloat(e.target.value);
+                updateVectorObjects();
+            });
+            
+            // Show grid
+            document.getElementById('show-grid').addEventListener('change', (e) => {
+                settings.showGrid = e.target.checked;
+                gridHelper.visible = settings.showGrid;
+            });
+            
+            // Color scheme
+            document.getElementById('color-scheme').addEventListener('change', (e) => {
+                settings.colorScheme = e.target.value;
+                updateVectorObjects();
+            });
+            
+            // Vector display
+            document.getElementById('vector-display').addEventListener('change', (e) => {
+                settings.vectorDisplay = e.target.value;
+                updateVectorObjects();
+            });
+            
+            // Show streamlines
+            document.getElementById('show-streamlines').addEventListener('change', (e) => {
+                settings.showStreamlines = e.target.checked;
+                if (settings.showStreamlines) {
+                    createParticles();
+                } else {
+                    removeParticles();
+                }
+            });
+            
+            // Animation speed
+            document.getElementById('animation-speed').addEventListener('input', (e) => {
+                settings.animationSpeed = parseFloat(e.target.value);
+            });
+            
+            // Particle count
+            document.getElementById('particle-count').addEventListener('input', (e) => {
+                settings.particleCount = parseInt(e.target.value);
+                if (settings.showStreamlines) {
+                    createParticles();
+                }
+            });
+            
+            // Play/pause animation
+            document.getElementById('play-pause').addEventListener('click', toggleAnimation);
+            
+            // Reset animation
+            document.getElementById('reset-animation').addEventListener('click', resetAnimation);
+        }
+        
+        // Generate vector field based on settings
+        function generateVectorField() {
+            vectorField = [];
+            const size = settings.resolution;
+            const spacing = 50 / (size - 1);
+            
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    for (let k = 0; k < size; k++) {
+                        // Calculate position
+                        const x = i * spacing - 10;
+                        const y = j * spacing - 10;
+                        const z = k * spacing - 10;
+                        
+                        // Calculate vector based on field type
+                        let vx, vy, vz;
+                        
+                        switch (settings.fieldType) {
+                            case 'random':
+                                vx = Math.random() * 2 - 1;
+                                vy = Math.random() * 2 - 1;
+                                vz = Math.random() * 2 - 1;
+                                break;
+                                
+                            case 'curl':
+                                // Curl field example: v = (-y, x, 0)
+                                vx = -y;
+                                vy = x;
+                                vz = 0;
+                                break;
+                                
+                            case 'divergence':
+                                // Divergent field example: v = (x, y, z)
+                                vx = x;
+                                vy = y;
+                                vz = z;
+                                break;
+                                
+                            case 'vortex':
+                                // Vortex field
+                                const r = Math.sqrt(x * x + y * y) + 0.1;
+                                vx = -y / r;
+                                vy = x / r;
+                                vz = 0;
+                                break;
+                                
+                            case 'custom':
+                                // Custom field - could be modified based on user input
+                                vx = Math.sin(x) * Math.cos(y);
+                                vy = Math.cos(y) * Math.sin(z);
+                                vz = Math.sin(z) * Math.cos(x);
+                                break;
+                        }
+                        
+                        // Normalize vector
+                        const magnitude = Math.sqrt(vx * vx + vy * vy + vz * vz);
+                        if (magnitude > 0) {
+                            vx /= magnitude;
+                            vy /= magnitude;
+                            vz /= magnitude;
+                        }
+                        
+                        vectorField.push({
+                            position: new THREE.Vector3(x, y, z),
+                            direction: new THREE.Vector3(vx, vy, vz),
+                            magnitude: magnitude
+                        });
+                    }
+                }
+            }
+        }
+        
+        // Regenerate vector field and update visualization
+        function regenerateVectorField() {
+            // Show loading indicator
+            loadingIndicator.classList.remove('hidden', 'opacity-0');
+            
+            // Remove existing vector objects
+            removeVectorObjects();
+            
+            // Generate new vector field
+            generateVectorField();
+            
+            // Create new vector objects
+            createVectorObjects();
+            
+            // Update particles if needed
+            if (settings.showStreamlines) {
+                createParticles();
+            }
+            
+            // Update stats
+            updateStats();
+            
+            // Hide loading indicator
+            setTimeout(() => {
+                loadingIndicator.classList.add('opacity-0');
+                setTimeout(() => {
+                    loadingIndicator.classList.add('hidden');
+                }, 300);
+            }, 500);
+        }
+        
+        // Create vector objects in the scene
+        function createVectorObjects() {
+            // Clear existing vector objects
+            removeVectorObjects();
+            
+            // Create new vector objects based on settings
+            const scale = settings.vectorScale;
+            
+            vectorField.forEach(vector => {
+                let vectorObject;
+                
+                switch (settings.vectorDisplay) {
+                    case 'arrows':
+                        // Create arrow helper for each vector
+                        const arrowHelper = new THREE.ArrowHelper(
+                            vector.direction.clone().multiplyScalar(scale),
+                            vector.position,
+                            1.5 * scale,
+                            getVectorColor(vector)
+                        );
+                        vectorObject = arrowHelper;
+                        break;
+                        
+                    case 'lines':
+                        // Create line for each vector
+                        const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                            vector.position,
+                            vector.position.clone().add(vector.direction.clone().multiplyScalar(1.5 * scale))
+                        ]);
+                        const lineMaterial = new THREE.LineBasicMaterial({
+                            color: getVectorColor(vector),
+                            linewidth: 2
+                        });
+                        vectorObject = new THREE.Line(lineGeometry, lineMaterial);
+                        break;
+                        
+                    case 'tubes':
+                        // Create tube for each vector
+                        const tubeGeometry = new THREE.CylinderGeometry(
+                            0.05 * scale, 0.15 * scale, 1.5 * scale, 12
+                        );
+                        const tubeMaterial = new THREE.MeshStandardMaterial({
+                            color: getVectorColor(vector),
+                            roughness: 0.8,
+                            metalness: 0.2
+                        });
+                        vectorObject = new THREE.Mesh(tubeGeometry, tubeMaterial);
+                        
+                        // Position and orient the tube
+                        vectorObject.position.copy(vector.position);
+                        vectorObject.position.add(vector.direction.clone().multiplyScalar(0.75 * scale));
+                        
+                        const quaternion = new THREE.Quaternion();
+                        quaternion.setFromUnitVectors(
+                            new THREE.Vector3(0, 1, 0),
+                            vector.direction.clone().normalize()
+                        );
+                        vectorObject.setRotationFromQuaternion(quaternion);
+                        break;
+                }
+                
+                scene.add(vectorObject);
+                vectorObjects.push(vectorObject);
+            });
+        }
+        
+        // Update existing vector objects
+        function updateVectorObjects() {
+            const scale = settings.vectorScale;
+            
+            vectorField.forEach((vector, index) => {
+                const vectorObject = vectorObjects[index];
+                
+                // Update color
+                if (vectorObject.material) {
+                    if (vectorObject.material.color) {
+                        vectorObject.material.color.set(getVectorColor(vector));
+                    }
+                } else if (vectorObject.setColor) {
+                    vectorObject.setColor(getVectorColor(vector));
+                }
+                
+                // Update scale and position based on display type
+                switch (settings.vectorDisplay) {
+                    case 'arrows':
+                        vectorObject.setLength(1.5 * scale, 0.2 * scale, 0.1 * scale);
+                        break;
+                        
+                    case 'lines':
+                        vectorObject.geometry.setFromPoints([
+                            vector.position,
+                            vector.position.clone().add(vector.direction.clone().multiplyScalar(1.5 * scale))
+                        ]);
+                        break;
+                        
+                    case 'tubes':
+                        vectorObject.scale.set(1, 1.5 * scale, 1);
+                        vectorObject.position.copy(vector.position);
+                        vectorObject.position.add(vector.direction.clone().multiplyScalar(0.75 * scale));
+                        break;
+                }
+            });
+        }
+        
+        // Remove vector objects from the scene
+        function removeVectorObjects() {
+            vectorObjects.forEach(object => {
+                scene.remove(object);
+                if (object.geometry) object.geometry.dispose();
+                if (object.material) object.material.dispose();
+            });
+            vectorObjects = [];
+        }
+        
+        // Get color for a vector based on settings
+        function getVectorColor(vector) {
+            const magnitude = vector.magnitude;
+            
+            switch (settings.colorScheme) {
+                case 'speed':
+                    // Color based on magnitude (speed)
+                    return new THREE.Color().setHSL(0.4 - (magnitude / 5), 1, 0.5);
+                    
+                case 'direction':
+                    // Color based on direction
+                    return new THREE.Color().setHSL(
+                        (Math.atan2(vector.direction.z, vector.direction.x) + Math.PI) / (2 * Math.PI),
+                        1,
+                        0.5 + (vector.direction.y + 1) / 4
+                    );
+                    
+                case 'temperature':
+                    // Temperature map (blue to red)
+                    return new THREE.Color().setHSL(0.6 - (magnitude / 10), 1, 0.5);
+                    
+                case 'rainbow':
+                    // Rainbow colors based on position
+                    return new THREE.Color().setHSL(
+                        (vector.position.x + 10) / 40 + 
+                        (vector.position.y + 10) / 40 + 
+                        (vector.position.z + 10) / 40,
+                        1,
+                        0.5
+                    );
+                    
+                case 'grayscale':
+                    // Grayscale based on magnitude
+                    return new THREE.Color().setRGB(
+                        0.3 + (magnitude / 5),
+                        0.3 + (magnitude / 5),
+                        0.3 + (magnitude / 5)
+                    );
+            }
+        }
+        
+        // Create particles for streamlines
+        function createParticles() {
+            // Remove existing particles
+            removeParticles();
+            
+            const particleGeometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(settings.particleCount * 3);
+            
+            // Initialize particles at random positions
+            for (let i = 0; i < settings.particleCount; i++) {
+                const i3 = i * 3;
+                positions[i3] = Math.random() * 20 - 10;  // x
+                positions[i3 + 1] = Math.random() * 20 - 10;  // y
+                positions[i3 + 2] = Math.random() * 20 - 10;  // z
+            }
+            
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const particleMaterial = new THREE.PointsMaterial({
+                size: 0.15,
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.8,
+                sizeAttenuation: true
+            });
+            
+            const particles = new THREE.Points(particleGeometry, particleMaterial);
+            scene.add(particles);
+            
+            // Store particles with their trail history
+            particles.trailHistory = [];
+            for (let i = 0; i < settings.particleCount; i++) {
+                particles.trailHistory.push([]);
+            }
+            
+            particles.trailLines = [];
+            
+            this.particles = particles;
+        }
+        
+        // Remove particles from the scene
+        function removeParticles() {
+            if (this.particles) {
+                scene.remove(this.particles);
+                this.particles.geometry.dispose();
+                this.particles.material.dispose();
+                
+                // Remove trail lines
+                if (this.particles.trailLines) {
+                    this.particles.trailLines.forEach(line => {
+                        scene.remove(line);
+                        line.geometry.dispose();
+                        line.material.dispose();
+                    });
+                }
+                
+                this.particles = null;
+            }
+        }
+        
+        // Update particles position based on vector field
+        function updateParticles(deltaTime) {
+            if (!this.particles || !settings.showStreamlines) return;
+            
+            const particles = this.particles;
+            const positions = particles.geometry.attributes.position.array;
+            const speedFactor = settings.animationSpeed * deltaTime;
+            
+            // Update each particle position
+            for (let i = 0; i < settings.particleCount; i++) {
+                const i3 = i * 3;
+                const x = positions[i3];
+                const y = positions[i3 + 1];
+                const z = positions[i3 + 2];
+                
+                // Find nearest vector in the field
+                const nearestVector = findNearestVector(x, y, z);
+                
+                // Get direction from nearest vector
+                const direction = nearestVector.direction.clone();
+                
+                // Update position
+                positions[i3] += direction.x * speedFactor;
+                positions[i3 + 1] += direction.y * speedFactor;
+                positions[i3 + 2] += direction.z * speedFactor;
+                
+                // Wrap around if particle goes outside bounds
+                if (positions[i3] > 10) positions[i3] = -10;
+                if (positions[i3] < -10) positions[i3] = 10;
+                if (positions[i3 + 1] > 10) positions[i3 + 1] = -10;
+                if (positions[i3 + 1] < -10) positions[i3 + 1] = 10;
+                if (positions[i3 + 2] > 10) positions[i3 + 2] = -10;
+                if (positions[i3 + 2] < -10) positions[i3 + 2] = 10;
+                
+                // Update trail history
+                const trailHistory = particles.trailHistory[i];
+                trailHistory.push(new THREE.Vector3(positions[i3], positions[i3 + 1], positions[i3 + 2]));
+                
+                // Limit trail length
+                if (trailHistory.length > 30) {
+                    trailHistory.shift();
+                }
+            }
+            
+            particles.geometry.attributes.position.needsUpdate = true;
+            
+            // Update trail lines
+            updateTrailLines();
+        }
+        
+        // Update trail lines for particles
+        function updateTrailLines() {
+            if (!this.particles) return;
+            
+            const particles = this.particles;
+            
+            // Remove old trail lines
+            particles.trailLines.forEach(line => {
+                scene.remove(line);
+                line.geometry.dispose();
+                line.material.dispose();
+            });
+            particles.trailLines = [];
+            
+            // Create new trail lines
+            for (let i = 0; i < settings.particleCount; i++) {
+                const trailHistory = particles.trailHistory[i];
+                
+                if (trailHistory.length > 1) {
+                    const trailGeometry = new THREE.BufferGeometry().setFromPoints(trailHistory);
+                    const trailMaterial = new THREE.LineBasicMaterial({
+                        color: new THREE.Color().setHSL(i / settings.particleCount, 1, 0.5),
+                        transparent: true,
+                        opacity: 0.6
+                    });
+                    const trailLine = new THREE.Line(trailGeometry, trailMaterial);
+                    scene.add(trailLine);
+                    particles.trailLines.push(trailLine);
+                }
+            }
+        }
+        
+        // Find nearest vector in the field to a given position
+        function findNearestVector(x, y, z) {
+            let nearestVector = vectorField[0];
+            let minDistance = Infinity;
+            
+            vectorField.forEach(vector => {
+                const distance = Math.sqrt(
+                    Math.pow(x - vector.position.x, 2) +
+                    Math.pow(y - vector.position.y, 2) +
+                    Math.pow(z - vector.position.z, 2)
+                );
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestVector = vector;
+                }
+            });
+            
+            return nearestVector;
+        }
+        
+        // Toggle animation
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            const playPauseBtn = document.getElementById('play-pause');
+            
+            if (isAnimating) {
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i><span>Pause</span>';
+                if (settings.showStreamlines && !this.particles) {
+                    createParticles();
+                }
+            } else {
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i><span>Play</span>';
+            }
+        }
+        
+        // Reset animation
+        function resetAnimation() {
+            if (this.particles) {
+                const positions = this.particles.geometry.attributes.position.array;
+                
+                // Reset particles to random positions
+                for (let i = 0; i < settings.particleCount; i++) {
+                    const i3 = i * 3;
+                    positions[i3] = Math.random() * 20 - 10;  // x
+                    positions[i3 + 1] = Math.random() * 20 - 10;  // y
+                    positions[i3 + 2] = Math.random() * 20 - 10;  // z
+                    
+                    // Clear trail history
+                    this.particles.trailHistory[i] = [];
+                }
+                
+                this.particles.geometry.attributes.position.needsUpdate = true;
+                
+                // Remove trail lines
+                if (this.particles.trailLines) {
+                    this.particles.trailLines.forEach(line => {
+                        scene.remove(line);
+                        line.geometry.dispose();
+                        line.material.dispose();
+                    });
+                    this.particles.trailLines = [];
+                }
+            }
+        }
+        
+        // Update stats display
+        function updateStats() {
+            document.getElementById('stats-resolution').textContent = 
+                `${settings.resolution}x${settings.resolution}x${settings.resolution}`;
+            
+            document.getElementById('stats-vectors').textContent = 
+                vectorField.length;
+            
+            // Calculate max magnitude
+            const maxMagnitude = vectorField.reduce((max, vector) => {
+                return Math.max(max, vector.magnitude);
+            }, 0);
+            
+            document.getElementById('stats-max-magnitude').textContent = 
+                maxMagnitude.toFixed(2);
+            
+            document.getElementById('stats-fps').textContent = 
+                Math.round(fps);
+        }
+        
+        // Export vector field data
+        function exportVectorFieldData() {
+            // Prepare data in a format suitable for export
+            const exportData = {
+                settings: settings,
+                vectors: vectorField.map(vector => {
+                    return {
+                        position: {
+                            x: vector.position.x,
+                            y: vector.position.y,
+                            z: vector.position.z
+                        },
+                        direction: {
+                            x: vector.direction.x,
+                            y: vector.direction.y,
+                            z: vector.direction.z
+                        },
+                        magnitude: vector.magnitude
+                    };
+                })
+            };
+            
+            // Create JSON blob
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            
+            // Create download link
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `vector-field-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 0);
+        }
+        
+        // Animation loop
+        function animate(timestamp) {
+            // Calculate FPS
+            if (lastTime) {
+                const delta = timestamp - lastTime;
+                fps = 1000 / delta;
+            }
+            lastTime = timestamp;
+            
+            // Update controls
+            controls.update();
+            
+            // Update particles if animation is enabled
+            if (isAnimating) {
+                updateParticles(0.016); // Assuming ~60fps
+            }
+            
+            // Render scene
+            renderer.render(scene, camera);
+            
+            // Continue animation loop
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+        
+        // Clean up when window is closed
+        window.addEventListener('beforeunload', () => {
+            cancelAnimationFrame(animationId);
+            if (renderer) {
+                renderer.dispose();
+            }
+        });
+    </script>
+</body>
+</html>
