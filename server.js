@@ -13,43 +13,46 @@ app.use(cors());
 app.use(express.json());
 
 // API endpoint to generate vector field data
-app.get('/api/vector-field', (req, res) => {
-    const { type, resolution = 8 } = req.query;
+// app.get('/api/vector-field', (req, res) => {
+//     const { type, resolution = 8 } = req.query;
     
-    // Generate vector field data based on parameters
-    const vectorField = generateVectorField(type, parseInt(resolution));
+//     // Generate vector field data based on parameters
+//     const vectorField = generateVectorField(type, parseInt(resolution));
     
-    res.json(vectorField);
-});
+//     res.json(vectorField);
+// });
 
-app.get('/api/read-pvf', async (req, res) => {
-    const { filepath } = req.query;
-    try {
-        const data = await readPVFJson(filepath);
-        res.json(data);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to read PVF JSON file' });
-    }
-});
+// app.get('/api/read-pvf', async (req, res) => {
+//     const { filepath } = req.query;
+//     try {
+//         const data = await readPVFJson(filepath);
+//         res.json(data);
+//     } catch (error) {
+//         res.status(500).json({ error: 'Failed to read PVF JSON file' });
+//     }
+// });
 
-app.get('/api/list-subjects', (req, res) => {
-    const subjects = listSubjects(PVF_SUBJECTS_DIR);
+app.get('/api/list-subjects', async (req, res) => {
+    const subjects = await listSubjects(PVF_SUBJECTS_DIR);
     res.json(subjects);
 });
 
-app.get('/api/list-subjects-files', (req, res) => {
-    const files = listSubjectsPVFFiles(PVF_SUBJECTS_DIR, req.query.subject);
+app.get('/api/list-subjects-files', async(req, res) => {
+    const files = await listSubjectsPVFFiles(PVF_SUBJECTS_DIR, req.query.subject);
     res.json(files);
 });
 
+app.get('/api/load-subjects-files', async(req, res) => {
+    const keys = await readPVFJson(PVF_SUBJECTS_DIR, req.query.subject, req.query.file);
+    console.log(keys);
+    res.json(keys);
+});
 
 // 启动服务器
 async function startServer() {
   try {
-    await ensureDirectoryExists(BASE_DIR);
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      console.log(`Serving folders from: ${BASE_DIR}`);
       console.log(`Serving PVF data from: ${PVF_SUBJECTS_DIR}`);
     });
   } catch (error) {
@@ -138,29 +141,47 @@ async function listSubjects(subjectsDir){
     const fs       = require('fs').promises;
     const entries  = await fs.readdir(subjectsDir, { withFileTypes: true });
     const subjects = entries.filter(entry => entry.isDirectory()).map(entry => entry.name);
+    // console.log(subjects);
     return subjects;
 };
 
 // Function to list subjects' PVF files
-function listSubjectsPVFFiles(subjectsDir, subjectName){
-    const fs       = require('fs').promises;
-    const path     = require('path');
+async function listSubjectsPVFFiles(subjectsDir, subjectName){
+    const fs         = require('fs').promises;
+    const path       = require('path');
     const subjectDir = path.join(subjectsDir, subjectName);
-    const entries  = fs.readdir(subjectDir, { withFileTypes: true });
-    const files    = entries.filter(entry => entry.isFile() && entry.name.endsWith('.json'));
-    return files.map(entry => entry.name);
+    const entries    = await fs.readdir(subjectDir, { withFileTypes: true });
+    const files      = entries.filter(entry => entry.isFile() && entry.name.endsWith('.json')).map(entry => entry.name);
+    return files;
 };
 
 // Function to read PVF JSON file
-async function readPVFJson(filepath) {
-    const fs = require('fs').promises;
+async function readPVFJson(subjectsDir, subjectName, fileName) {
+    const path     = require('path');
+    const filepath = path.join(subjectsDir, subjectName, fileName);
 
-    try {
-        const fileContent = await fs.readFile(filepath, 'utf8');
-        const data = JSON.parse(fileContent);
-        console.log(data.keys());
-        return data;
-    } catch (error) {
-        console.error('Error reading JSON file:', error);
-    }
+    // 使用JSONStream模块
+    const fs = require('fs');
+    const JSONStream = require('JSONStream');
+
+    data_stream = fs.createReadStream(filepath)
+    .pipe(JSONStream.parse('*'))
+    .on('data', chunk => {
+        // 处理每个JSON对象
+        console.log(chunk);
+        console.log(Object.keys(chunk));
+    })
+    .on('end', () => console.log('处理完成'))
+    .on('error', err => console.error('错误:', err));
+
+    console.log(Object.keys(data_stream));
+    // try {
+    //     const fileContent = await fs.readFile(filepath, 'utf8');
+    //     const data = JSON.parse(fileContent);
+    //     console.log(Object.keys(data));
+    //     return Object.keys(data);
+    //     // return data;
+    // } catch (error) {
+    //     console.error('Error reading JSON file:', error);
+    // }
 };
