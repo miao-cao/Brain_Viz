@@ -183,7 +183,7 @@
             
             const data = await response.json();
             console.log(data);
-            showError(data);
+            showError(Object.keys(data));
         }
 
         // 显示错误信息

@@ -157,31 +157,109 @@ async function listSubjectsPVFFiles(subjectsDir, subjectName){
 
 // Function to read PVF JSON file
 async function readPVFJson(subjectsDir, subjectName, fileName) {
-    const path     = require('path');
-    const filepath = path.join(subjectsDir, subjectName, fileName);
+    const fs   = require('fs');
+    const path = require('path');
+    // const filepath = path.join(subjectsDir, subjectName, fileName);
 
-    // 使用JSONStream模块
-    const fs = require('fs');
-    const JSONStream = require('JSONStream');
-
-    data_stream = fs.createReadStream(filepath)
-    .pipe(JSONStream.parse('*'))
-    .on('data', chunk => {
-        // 处理每个JSON对象
-        console.log(chunk);
-        console.log(Object.keys(chunk));
-    })
-    .on('end', () => console.log('处理完成'))
-    .on('error', err => console.error('错误:', err));
-
-    console.log(Object.keys(data_stream));
-    // try {
-    //     const fileContent = await fs.readFile(filepath, 'utf8');
-    //     const data = JSON.parse(fileContent);
-    //     console.log(Object.keys(data));
-    //     return Object.keys(data);
-    //     // return data;
-    // } catch (error) {
-    //     console.error('Error reading JSON file:', error);
-    // }
+    // console.log(Object.keys(data_stream));
+    const metadata_fname = path.join(subjectsDir, subjectName, fileName);
+    const PVF_Vx_fname = metadata_fname.replace('_metadata.json', '_Vx.json');
+    const PVF_Vy_fname = metadata_fname.replace('_metadata.json', '_Vy.json');
+    const PVF_Vz_fname = metadata_fname.replace('_metadata.json', '_Vz.json');
+    const resp_value = {};
+    // fs.readFile(metadata_fname, 'utf8', (err, data) => { // 回调函数作为最后一个参数
+    //     if (err) {
+    //         console.error('读取失败:', err);
+    //         return; // 出错时退出
+    //     }
+    //     try {
+    //         const jsonData = JSON.parse(data);
+    //         console.log(Object.keys(jsonData));
+    //         resp_value.metadata = Object.keys(jsonData);
+    //     } catch (parseErr) {
+    //         console.error('JSON解析失败:', parseErr);
+    //     }
+    //     });
+    // fs.readFile(PVF_Vx_fname, 'utf8', (err, data) => { // 回调函数作为最后一个参数
+    //     if (err) {
+    //         console.error('读取失败:', err);
+    //         return; // 出错时退出
+    //     }
+    //     try {
+    //         const jsonData = JSON.parse(data);
+    //         console.log(Object.keys(jsonData));
+    //         resp_value.Vx = Object.keys(jsonData);
+    //     } catch (parseErr) {
+    //         console.error('JSON解析失败:', parseErr);
+    //     }
+    //     });
+    // fs.readFile(PVF_Vy_fname, 'utf8', (err, data) => { // 回调函数作为最后一个参数
+    //     if (err) {
+    //         console.error('读取失败:', err);
+    //         return; // 出错时退出
+    //     }
+    //     try {
+    //         const jsonData = JSON.parse(data);
+    //         console.log(Object.keys(jsonData));
+    //         resp_value.Vy = Object.keys(jsonData);
+    //     } catch (parseErr) {
+    //         console.error('JSON解析失败:', parseErr);
+    //     }
+    //     });
+    // fs.readFile(PVF_Vz_fname, 'utf8', (err, data) => { // 回调函数作为最后一个参数
+    //     if (err) {
+    //         console.error('读取失败:', err);
+    //         return; // 出错时退出
+    //     }
+    //     try {
+    //         const jsonData = JSON.parse(data);
+    //         console.log(Object.keys(jsonData));
+    //         resp_value.Vz = Object.keys(jsonData);
+    //     } catch (parseErr) {
+    //         console.error('JSON解析失败:', parseErr);
+    //     }
+    //     });
+    try {
+        // 同步方法：无回调，直接获取结果
+        const data = fs.readFileSync(metadata_fname, 'utf8');
+        const jsonData = JSON.parse(data);
+        resp_value.metadata = Object.keys(jsonData);
+        console.log('读取成功:', resp_value.metadata);
+    } catch (err) {
+    // 捕获所有错误（读取失败或解析失败）
+        console.error('处理失败:', err);
+    }
+    try {
+        // 同步方法：无回调，直接获取结果
+        const data = fs.readFileSync(PVF_Vx_fname, 'utf8');
+        const jsonData = JSON.parse(data);
+        resp_value.Vx = Object.keys(jsonData);
+        console.log('读取成功:', resp_value.Vx);
+    } catch (err) {
+    // 捕获所有错误（读取失败或解析失败）
+        console.error('处理失败:', err);
+    }
+    try {
+        // 同步方法：无回调，直接获取结果
+        const data = fs.readFileSync(PVF_Vy_fname, 'utf8');
+        const jsonData = JSON.parse(data);
+        resp_value.Vy = Object.keys(jsonData);
+        console.log('读取成功:', resp_value.Vy);
+    } catch (err) {
+    // 捕获所有错误（读取失败或解析失败）
+        console.error('处理失败:', err);
+    }
+    try {
+        // 同步方法：无回调，直接获取结果
+        const data = fs.readFileSync(PVF_Vz_fname, 'utf8');
+        const jsonData = JSON.parse(data);
+        resp_value.Vz = Object.keys(jsonData);
+        console.log('读取成功:', resp_value.Vz);
+    } catch (err) {
+    // 捕获所有错误（读取失败或解析失败）
+        console.error('处理失败:', err);
+    }
+    console.log(resp_value);
+    return resp_value;
+    
 };
