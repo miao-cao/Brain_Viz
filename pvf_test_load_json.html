@@ -15,9 +15,9 @@
         </div>
 
         <div class="mb-4">
-            <label for="folder-select" class="block text-sm font-medium text-gray-700 mb-1">Subject List:</label>
+            <label for="subject-select" class="block text-sm font-medium text-gray-700 mb-1">Subject List:</label>
             <div class="relative">
-                <select id="folder-select" class="block w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 appearance-none">
+                <select id="subject-select" class="block w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 appearance-none">
                     <option value="">Loading folders...</option>
                 </select>
                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
@@ -60,7 +60,7 @@
 
     <script>
         // DOM元素
-        const folderSelect = document.getElementById('folder-select');
+        const folderSelect = document.getElementById('subject-select');
         const fileSelect = document.getElementById('file-select');
         const selectedFolderInfo = document.getElementById('selected-folder-info');
         const selectedFolderPath = document.getElementById('selected-folder-path');

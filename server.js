@@ -5,6 +5,21 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+
+const subject_ID   = ""
+const PVF_fname    = ""
+const PVF_metadata = {}
+const PVF_Vx       = {}
+const PVF_Vy       = {}
+const PVF_Vz       = {}
+const PVF_condA_fname = ""
+
+const PVF_pattern_fname    = ""
+const PVF_pattern_data = {}
+
+const PVF_streamline_folder = ""
+const PVF_streamlines_timewindow = {}
+
 // PVF data directory
 const PVF_SUBJECTS_DIR = path.join(__dirname, 'pvf_data', 'pvf_subjects');
 
@@ -62,79 +77,79 @@ async function startServer() {
 
 startServer();
 
-// Function to generate vector field data
-function generateVectorField(type = 'random', resolution = 8) {
-    const vectorField = [];
-    const size = resolution;
-    const spacing = 50 / (size - 1);
+// // Function to generate vector field data
+// function generateVectorField(type = 'random', resolution = 8) {
+//     const vectorField = [];
+//     const size = resolution;
+//     const spacing = 50 / (size - 1);
     
-    for (let i = 0; i < size; i++) {
-        for (let j = 0; j < size; j++) {
-            for (let k = 0; k < size; k++) {
-                // Calculate position
-                const x = i * spacing - 10;
-                const y = j * spacing - 10;
-                const z = k * spacing - 10;
+//     for (let i = 0; i < size; i++) {
+//         for (let j = 0; j < size; j++) {
+//             for (let k = 0; k < size; k++) {
+//                 // Calculate position
+//                 const x = i * spacing - 10;
+//                 const y = j * spacing - 10;
+//                 const z = k * spacing - 10;
                 
-                // Calculate vector based on field type
-                let vx, vy, vz;
+//                 // Calculate vector based on field type
+//                 let vx, vy, vz;
                 
-                switch (type) {
-                    case 'random':
-                        vx = Math.random() * 2 - 1;
-                        vy = Math.random() * 2 - 1;
-                        vz = Math.random() * 2 - 1;
-                        break;
+//                 switch (type) {
+//                     case 'random':
+//                         vx = Math.random() * 2 - 1;
+//                         vy = Math.random() * 2 - 1;
+//                         vz = Math.random() * 2 - 1;
+//                         break;
                         
-                    case 'curl':
-                        // Curl field example: v = (-y, x, 0)
-                        vx = -y;
-                        vy = x;
-                        vz = 0;
-                        break;
+//                     case 'curl':
+//                         // Curl field example: v = (-y, x, 0)
+//                         vx = -y;
+//                         vy = x;
+//                         vz = 0;
+//                         break;
                         
-                    case 'divergence':
-                        // Divergent field example: v = (x, y, z)
-                        vx = x;
-                        vy = y;
-                        vz = z;
-                        break;
+//                     case 'divergence':
+//                         // Divergent field example: v = (x, y, z)
+//                         vx = x;
+//                         vy = y;
+//                         vz = z;
+//                         break;
                         
-                    case 'vortex':
-                        // Vortex field
-                        const r = Math.sqrt(x * x + y * y) + 0.1;
-                        vx = -y / r;
-                        vy = x / r;
-                        vz = 0;
-                        break;
+//                     case 'vortex':
+//                         // Vortex field
+//                         const r = Math.sqrt(x * x + y * y) + 0.1;
+//                         vx = -y / r;
+//                         vy = x / r;
+//                         vz = 0;
+//                         break;
                         
-                    case 'custom':
-                        // Custom field
-                        vx = Math.sin(x) * Math.cos(y);
-                        vy = Math.cos(y) * Math.sin(z);
-                        vz = Math.sin(z) * Math.cos(x);
-                        break;
-                }
+//                     case 'custom':
+//                         // Custom field
+//                         vx = Math.sin(x) * Math.cos(y);
+//                         vy = Math.cos(y) * Math.sin(z);
+//                         vz = Math.sin(z) * Math.cos(x);
+//                         break;
+//                 }
                 
-                // Normalize vector
-                const magnitude = Math.sqrt(vx * vx + vy * vy + vz * vz);
-                if (magnitude > 0) {
-                    vx /= magnitude;
-                    vy /= magnitude;
-                    vz /= magnitude;
-                }
+//                 // Normalize vector
+//                 const magnitude = Math.sqrt(vx * vx + vy * vy + vz * vz);
+//                 if (magnitude > 0) {
+//                     vx /= magnitude;
+//                     vy /= magnitude;
+//                     vz /= magnitude;
+//                 }
                 
-                vectorField.push({
-                    position: { x, y, z },
-                    direction: { x: vx, y: vy, z: vz },
-                    magnitude
-                });
-            }
-        }
-    }
+//                 vectorField.push({
+//                     position: { x, y, z },
+//                     direction: { x: vx, y: vy, z: vz },
+//                     magnitude
+//                 });
+//             }
+//         }
+//     }
     
-    return vectorField;
-}
+//     return vectorField;
+// }
 
 // Function to list subjects
 async function listSubjects(subjectsDir){
@@ -155,6 +170,18 @@ async function listSubjectsPVFFiles(subjectsDir, subjectName){
     return files;
 };
 
+
+async function processPVFTimeWindow(PVF_timeWindowID) {
+    resp_value = {};
+    resp_value.Vx = PVF_Vx[PVF_timeWindowID];
+    resp_value.Vy = PVF_Vy[PVF_timeWindowID];
+    resp_value.Vz = PVF_Vz[PVF_timeWindowID];
+    resp_value.subjectID = subject_ID;
+
+
+    return resp_value
+}
+
 // Function to read PVF JSON file
 async function readPVFJson(subjectsDir, subjectName, fileName) {
     const fs   = require('fs');
@@ -162,68 +189,20 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
     // const filepath = path.join(subjectsDir, subjectName, fileName);
 
     // console.log(Object.keys(data_stream));
-    const metadata_fname = path.join(subjectsDir, subjectName, fileName);
-    const PVF_Vx_fname = metadata_fname.replace('_metadata.json', '_Vx.json');
-    const PVF_Vy_fname = metadata_fname.replace('_metadata.json', '_Vy.json');
-    const PVF_Vz_fname = metadata_fname.replace('_metadata.json', '_Vz.json');
+    const metadata_fname        = path.join(subjectsDir, subjectName, fileName);
+    const PVF_Vx_fname          = metadata_fname.replace('_metadata.json', '_Vx.json');
+    const PVF_Vy_fname          = metadata_fname.replace('_metadata.json', '_Vy.json');
+    const PVF_Vz_fname          = metadata_fname.replace('_metadata.json', '_Vz.json');
+    const PVF_condA_fname       = metadata_fname.replace('_metadata.json', '_condA.json');
+    const PVF_pattern_fname     = metadata_fname.replace('_metadata.json', '_pattern_detection.json');
+    const PVF_streamline_folder = metadata_fname.replace('_metadata.json', '_streamlines');
     const resp_value = {};
-    // fs.readFile(metadata_fname, 'utf8', (err, data) => { // 回调函数作为最后一个参数
-    //     if (err) {
-    //         console.error('读取失败:', err);
-    //         return; // 出错时退出
-    //     }
-    //     try {
-    //         const jsonData = JSON.parse(data);
-    //         console.log(Object.keys(jsonData));
-    //         resp_value.metadata = Object.keys(jsonData);
-    //     } catch (parseErr) {
-    //         console.error('JSON解析失败:', parseErr);
-    //     }
-    //     });
-    // fs.readFile(PVF_Vx_fname, 'utf8', (err, data) => { // 回调函数作为最后一个参数
-    //     if (err) {
-    //         console.error('读取失败:', err);
-    //         return; // 出错时退出
-    //     }
-    //     try {
-    //         const jsonData = JSON.parse(data);
-    //         console.log(Object.keys(jsonData));
-    //         resp_value.Vx = Object.keys(jsonData);
-    //     } catch (parseErr) {
-    //         console.error('JSON解析失败:', parseErr);
-    //     }
-    //     });
-    // fs.readFile(PVF_Vy_fname, 'utf8', (err, data) => { // 回调函数作为最后一个参数
-    //     if (err) {
-    //         console.error('读取失败:', err);
-    //         return; // 出错时退出
-    //     }
-    //     try {
-    //         const jsonData = JSON.parse(data);
-    //         console.log(Object.keys(jsonData));
-    //         resp_value.Vy = Object.keys(jsonData);
-    //     } catch (parseErr) {
-    //         console.error('JSON解析失败:', parseErr);
-    //     }
-    //     });
-    // fs.readFile(PVF_Vz_fname, 'utf8', (err, data) => { // 回调函数作为最后一个参数
-    //     if (err) {
-    //         console.error('读取失败:', err);
-    //         return; // 出错时退出
-    //     }
-    //     try {
-    //         const jsonData = JSON.parse(data);
-    //         console.log(Object.keys(jsonData));
-    //         resp_value.Vz = Object.keys(jsonData);
-    //     } catch (parseErr) {
-    //         console.error('JSON解析失败:', parseErr);
-    //     }
-    //     });
+
     try {
         // 同步方法：无回调，直接获取结果
-        const data = fs.readFileSync(metadata_fname, 'utf8');
-        const jsonData = JSON.parse(data);
-        resp_value.metadata = Object.keys(jsonData);
+        const data         = fs.readFileSync(metadata_fname, 'utf8');
+        const PVF_metadata = JSON.parse(data);
+        resp_value.metadata = Object.keys(PVF_metadata);
         console.log('读取成功:', resp_value.metadata);
     } catch (err) {
     // 捕获所有错误（读取失败或解析失败）
@@ -231,9 +210,9 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
     }
     try {
         // 同步方法：无回调，直接获取结果
-        const data = fs.readFileSync(PVF_Vx_fname, 'utf8');
-        const jsonData = JSON.parse(data);
-        resp_value.Vx = Object.keys(jsonData);
+        const data   = fs.readFileSync(PVF_Vx_fname, 'utf8');
+        const PVF_Vx = JSON.parse(data);
+        resp_value.Vx = Object.keys(PVF_Vx);
         console.log('读取成功:', resp_value.Vx);
     } catch (err) {
     // 捕获所有错误（读取失败或解析失败）
@@ -241,9 +220,9 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
     }
     try {
         // 同步方法：无回调，直接获取结果
-        const data = fs.readFileSync(PVF_Vy_fname, 'utf8');
-        const jsonData = JSON.parse(data);
-        resp_value.Vy = Object.keys(jsonData);
+        const data          = fs.readFileSync(PVF_Vy_fname, 'utf8');
+        const PVF_Vy        = JSON.parse(data);
+        resp_value.Vy = Object.keys(PVF_Vy);
         console.log('读取成功:', resp_value.Vy);
     } catch (err) {
     // 捕获所有错误（读取失败或解析失败）
@@ -252,8 +231,8 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
     try {
         // 同步方法：无回调，直接获取结果
         const data = fs.readFileSync(PVF_Vz_fname, 'utf8');
-        const jsonData = JSON.parse(data);
-        resp_value.Vz = Object.keys(jsonData);
+        const PVF_Vz = JSON.parse(data);
+        resp_value.Vz = Object.keys(PVF_Vz);
         console.log('读取成功:', resp_value.Vz);
     } catch (err) {
     // 捕获所有错误（读取失败或解析失败）
