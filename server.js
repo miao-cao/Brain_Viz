@@ -9,16 +9,19 @@ const PORT = process.env.PORT || 3000;
 const subject_ID   = ""
 const PVF_fname    = ""
 const PVF_metadata = {}
+const PVF_num_time_points = 0
 const PVF_Vx       = {}
 const PVF_Vy       = {}
 const PVF_Vz       = {}
-const PVF_condA_fname = ""
 
-const PVF_pattern_fname    = ""
-const PVF_pattern_data = {}
+const PVF_condA_fname = ""
+const PVF_condA_data  = {}
+
+const PVF_pattern_fname = ""
+const PVF_pattern_data  = {}
 
 const PVF_streamline_folder = ""
-const PVF_streamlines_timewindow = {}
+const PVF_streamlines_timeWindows = {}
 
 // PVF data directory
 const PVF_SUBJECTS_DIR = path.join(__dirname, 'pvf_data', 'pvf_subjects');
@@ -170,16 +173,34 @@ async function listSubjectsPVFFiles(subjectsDir, subjectName){
     return files;
 };
 
+async function laodPVFStreamlines(timepoint) {
+    // for (let i = 0; i < 10; i++) {
+    //     const PVF_streamline_fname = path.join(PVF_streamline_folder, `pvf_streamlines_time_window_${i}_${i+1}.json`);
+    //     const data                 = fs.readFileSync(PVF_streamline_fname, 'utf8');
+    //     const PVF_streamlines_timeWindows[i] = JSON.parse(data);
+
+
+};
+
 
 async function processPVFTimeWindow(PVF_timeWindowID) {
-    resp_value = {};
-    resp_value.Vx = PVF_Vx[PVF_timeWindowID];
+    resp_value.current_PVF = {};
+    resp_value.Vx = PVF_Vx.Vx[:][:][:][PVF_timeWindowID];
     resp_value.Vy = PVF_Vy[PVF_timeWindowID];
     resp_value.Vz = PVF_Vz[PVF_timeWindowID];
     resp_value.subjectID = subject_ID;
 
 
     return resp_value
+}
+
+function getArrayDimensionsLength(arr) {
+  if (!Array.isArray(arr)) {
+    return []; // 非数组，无维度
+  }
+  // 当前层的长度 + 递归子数组的维度长度（取第一个子数组的维度作为参考，兼容不规则数组）
+  const firstChildDims = arr.length > 0 ? getArrayDimensionsLength(arr[0]) : [];
+  return [arr.length, ...firstChildDims];
 }
 
 // Function to read PVF JSON file
@@ -198,6 +219,8 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
     const PVF_streamline_folder = metadata_fname.replace('_metadata.json', '_streamlines');
     const resp_value = {};
 
+
+    // PVF meta data
     try {
         // 同步方法：无回调，直接获取结果
         const data         = fs.readFileSync(metadata_fname, 'utf8');
@@ -205,19 +228,25 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         resp_value.metadata = Object.keys(PVF_metadata);
         console.log('读取成功:', resp_value.metadata);
     } catch (err) {
-    // 捕获所有错误（读取失败或解析失败）
+        // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
     }
+
+    // PVF Vx
     try {
         // 同步方法：无回调，直接获取结果
         const data   = fs.readFileSync(PVF_Vx_fname, 'utf8');
-        const PVF_Vx = JSON.parse(data);
+        PVF_Vx = JSON.parse(data);
+        PVF_num_time_points = getArrayDimensionsLength(PVF_Vx.Vx)[3];
         resp_value.Vx = Object.keys(PVF_Vx);
         console.log('读取成功:', resp_value.Vx);
+        console.log('Number of time points:', PVF_num_time_points);
     } catch (err) {
-    // 捕获所有错误（读取失败或解析失败）
+        // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
     }
+
+    // PVF Vy
     try {
         // 同步方法：无回调，直接获取结果
         const data          = fs.readFileSync(PVF_Vy_fname, 'utf8');
@@ -225,9 +254,11 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         resp_value.Vy = Object.keys(PVF_Vy);
         console.log('读取成功:', resp_value.Vy);
     } catch (err) {
-    // 捕获所有错误（读取失败或解析失败）
+        // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
     }
+
+    // PVF Vz
     try {
         // 同步方法：无回调，直接获取结果
         const data = fs.readFileSync(PVF_Vz_fname, 'utf8');
@@ -235,10 +266,50 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         resp_value.Vz = Object.keys(PVF_Vz);
         console.log('读取成功:', resp_value.Vz);
     } catch (err) {
-    // 捕获所有错误（读取失败或解析失败）
+        // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
     }
-    console.log(resp_value);
+
+    // // condition number of operator A
+    // try {
+    //     // 同步方法：无回调，直接获取结果
+    //     const data = fs.readFileSync(PVF_condA_fname, 'utf8');
+    //     const PVF_condA_data = JSON.parse(data);
+    //     resp_value.condA = Object.keys(PVF_condA_data);
+    //     console.log('读取成功:', resp_value.condA);
+    // } catch (err) {
+    // // 捕获所有错误（读取失败或解析失败）
+    //     console.error('处理失败:', err);
+    // }
+    
+    // // patterns - singularities
+    // try {
+    //     // 同步方法：无回调，直接获取结果
+    //     const data = fs.readFileSync(PVF_pattern_fname, 'utf8');
+    //     const PVF_pattern_data = JSON.parse(data);
+    //     resp_value.pattern = Object.keys(PVF_pattern_data);
+    //     console.log('读取成功:', resp_value.pattern);
+    // } catch (err) {
+    // // 捕获所有错误（读取失败或解析失败）
+    //     console.error('处理失败:', err);
+    // }
+    
+    // // streamlines
+    // try {
+    //     // 同步方法：无回调，直接获取结果
+    //     const PVF_streamline_firstTW_fname = path.join(PVF_streamline_folder, "pvf_streamlines_time_window_0_9.json");
+    //     const data                         = fs.readFileSync(PVF_streamline_firstTW_fname, 'utf8');
+    //     const PVF_streamlines_timeWindows  = JSON.parse(data);
+    //     resp_value.streamlines = Object.keys(PVF_streamlines_timeWindows);
+    //     console.log('读取成功:', resp_value.streamlines);
+    // } catch (err) {
+    // // 捕获所有错误（读取失败或解析失败）
+    //     console.error('处理失败:', err);
+    // }
+    
+
+    // resp_value.PVF_data = processPVFTimeWindow(0)
+    // console.log(resp_value);
     return resp_value;
     
 };
