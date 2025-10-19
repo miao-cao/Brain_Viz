@@ -81,7 +81,7 @@ async function startServer() {
 startServer();
 
 
-// Function to list subjects
+// Function to list all subject IDs under PVF_SUBJECTS_DIR
 async function listSubjects(subjectsDir){
     const fs       = require('fs').promises;
     const entries  = await fs.readdir(subjectsDir, { withFileTypes: true });
@@ -90,13 +90,13 @@ async function listSubjects(subjectsDir){
     return subjects;
 };
 
-// Function to list subjects' PVF files
+// Function to list all _metadata.json files under a subject's directory
 async function listSubjectsPVFFiles(subjectsDir, subjectName){
     const fs         = require('fs').promises;
     const path       = require('path');
     const subjectDir = path.join(subjectsDir, subjectName);
     const entries    = await fs.readdir(subjectDir, { withFileTypes: true });
-    const files      = entries.filter(entry => entry.isFile() && entry.name.endsWith('.json')).map(entry => entry.name);
+    const files      = entries.filter(entry => entry.isFile() && entry.name.endsWith('_metadata.json')).map(entry => entry.name);
     return files;
 };
 

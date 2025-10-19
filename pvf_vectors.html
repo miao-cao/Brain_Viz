@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Vector Field Visualization</title>
+    <title>3-D Velocity Field Visualisation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
@@ -67,7 +67,7 @@
                 </button>
                 <h1 class="text-xl font-semibold text-light flex items-center gap-2">
                     <i class="fas fa-cube text-primary"></i>
-                    <span>VectorField3D</span>
+                    <span>3-D Phave Velocity Field</span>
                 </h1>
             </div>
             
@@ -90,6 +90,89 @@
         <!-- Sidebar -->
         <aside id="sidebar" class="sidebar fixed left-0 top-16 bottom-0 bg-dark/95 backdrop-blur-md border-r border-white/10 p-4 overflow-y-auto z-40">
             <div class="space-y-6">
+                <!-- PVF data Browser -->
+                <div class="panel-gradient rounded-xl p-4 border border-white/10">
+                <h2 class="text-lg font-medium mb-3 flex items-center gap-2">
+                        <i class="fas fa-database text-primary" aria-hidden="True"></i>
+                        Database
+                </h2>
+
+
+                <div class="mb-4 gap-2">
+                    <!-- <div>
+                        <label class="block text-sm font-medium text-light/80 mb-1">Subject List</label>
+                    </div> -->
+                    <!-- <div class="relative">
+                        <select id="subject-select" class="block w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 appearance-none">
+                            <option value="">Loading subject names...</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div> -->
+                    <div>
+                        <label class="block text-sm font-medium text-light/80 mb-1 gap-2">Subject List</label>
+                        <select id="subject-select" class="w-full bg-dark/50 border border-white/10 rounded-lg px-3 py-2 text-light focus:outline-none focus:ring-2 focus:ring-primary/50">
+                            <option value="">Loading subject names...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="text-sm text-gray-600 gap-4">
+                    <!-- <button id="reload-button" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="loadSubjectList()">Load Subjects</button> -->
+                    <button id="reload-button" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-center gap-4" onclick="loadSubjectList()">
+                        <i class="fas fa-list"></i>
+                        <span>Load Subjects</span>
+                    </button>
+                </div>
+
+                <div class="mb-4 gap-4">
+                    <!-- <div>
+                        <label class="block text-sm font-medium text-light/80 mb-1">File List</label>
+                    </div> -->
+                    <!-- <div class="relative">
+                        <select id="file-select" class="block w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 appearance-none">
+                            <option value="">Loading files ...</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div> -->
+                    <div class="gap-4">
+                        <label class="block text-sm font-medium text-light/80 mb-1 gap-4">File List</label>
+                        <select id="file-select" class="w-full bg-dark/50 border border-white/10 rounded-lg px-3 py-2 text-light focus:outline-none focus:ring-2 focus:ring-primary/50 gap-4">
+                            <option value="">Loading files...</option>
+                        </select>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        <button id="load-file-button" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-center gap-2" onclick="loadFile()">
+                            <i class="fas fa-file" aria-hidden="true"></i>
+                            <span>Load Meta Data Files</span>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- <div class="text-sm text-gray-600">
+                    <button id="load-file-button" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-center gap-4" onclick="loadFile()">Load File</button>
+                </div> -->
+
+
+                <div id="selected-folder-info" class="mt-4 p-3 bg-blue-50 rounded-lg hidden">
+                    <h3 class="font-medium text-blue-800">Selected Folder:</h3>
+                    <p id="selected-folder-path" class="text-sm text-blue-700"></p>
+                </div>
+                
+                <div id="error-message" class="mt-4 p-3 bg-red-50 rounded-lg hidden">
+                    <h3 class="font-medium text-red-800">Error:</h3>
+                    <p id="error-details" class="text-sm text-red-700"></p>
+                </div>
+                </div>
+
                 <!-- Vector Field Settings -->
                 <div class="panel-gradient rounded-xl p-4 border border-white/10">
                     <h2 class="text-lg font-medium mb-3 flex items-center gap-2">
@@ -207,57 +290,9 @@
                         </div>
                     </div>
                 </div>
+
             </div>
-            <div class="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-md mt-8">
-                <h1 class="text-2xl font-bold text-gray-800 mb-4">Folder Browser</h1>
-                <div class="text-sm text-gray-600">
-                    <!-- <p>Load subject list</p> -->
-                    <button id="reload-button" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="loadSubjectList()">Load Subjects</button>
-                </div>
-
-                <div class="mb-4">
-                    <label for="subject-select" class="block text-sm font-medium text-gray-700 mb-1">Subject List:</label>
-                    <div class="relative">
-                        <select id="subject-select" class="block w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 appearance-none">
-                            <option value="">Loading folders...</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                
-                <div class="mb-4">
-                    <label for="file-select" class="block text-sm font-medium text-gray-700 mb-1">File List:</label>
-                    <div class="relative">
-                        <select id="file-select" class="block w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 appearance-none">
-                            <option value="">Loading folders...</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="text-sm text-gray-600">
-                    <button id="load-file-button" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="loadFile()">Load File</button>
-                </div>
-
-                <div id="selected-folder-info" class="mt-4 p-3 bg-blue-50 rounded-lg hidden">
-                    <h3 class="font-medium text-blue-800">Selected Folder:</h3>
-                    <p id="selected-folder-path" class="text-sm text-blue-700"></p>
-                </div>
-                
-                <div id="error-message" class="mt-4 p-3 bg-red-50 rounded-lg hidden">
-                    <h3 class="font-medium text-red-800">Error:</h3>
-                    <p id="error-details" class="text-sm text-red-700"></p>
-                </div>
-            </div>
+            
         </aside>
 
         <!-- Visualization Area -->
@@ -313,6 +348,14 @@
         const resetViewBtn = document.getElementById('reset-view');
         const toggleFullscreenBtn = document.getElementById('toggle-fullscreen');
         const exportDataBtn = document.getElementById('export-data');
+        
+        // DOM elements for File Panel
+        const folderSelect = document.getElementById('subject-select');
+        const fileSelect = document.getElementById('file-select');
+        const selectedFolderInfo = document.getElementById('selected-folder-info');
+        const selectedFolderPath = document.getElementById('selected-folder-path');
+        const errorMessage = document.getElementById('error-message');
+        const errorDetails = document.getElementById('error-details');
         
         // Three.js Scene Variables
         let scene, camera, renderer, controls;
@@ -1093,13 +1136,6 @@
             }
         });
         
-        // DOM elements for File Panel
-        const folderSelect = document.getElementById('subject-select');
-        const fileSelect = document.getElementById('file-select');
-        const selectedFolderInfo = document.getElementById('selected-folder-info');
-        const selectedFolderPath = document.getElementById('selected-folder-path');
-        const errorMessage = document.getElementById('error-message');
-        const errorDetails = document.getElementById('error-details');
         
         // 加载文件夹列表
         async function loadSubjectList(path = '') {
@@ -1114,7 +1150,7 @@
                 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => null);
-                    throw new Error(errorData?.error || `Failed to load folders (${response.status})`);
+                    throw new Error(errorData?.error || `Failed to load subject names (${response.status})`);
                 }
                 
                 const data = await response.json();
@@ -1148,7 +1184,7 @@
             } catch (error) {
                 console.error('Error loading folders:', error);
                 showError(error.message);
-                folderSelect.innerHTML = '<option value="">Failed to load folders</option>';
+                folderSelect.innerHTML = '<option value="">Failed to load subject names</option>';
             }
         }
 
@@ -1166,7 +1202,7 @@
                 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => null);
-                    throw new Error(errorData?.error || `Failed to load folders (${response.status})`);
+                    throw new Error(errorData?.error || `Failed to load files (${response.status})`);
                 }
                 
                 const data = await response.json();
