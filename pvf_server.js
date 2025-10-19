@@ -6,25 +6,25 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 
-const subject_ID   = ""
-const PVF_fname    = ""
-const PVF_metadata = {}
-const PVF_num_time_points = 0
-const PVF_Vx       = {}
-const PVF_Vy       = {}
-const PVF_Vz       = {}
+let subject_ID          = ""
+let PVF_fname           = ""
+let PVF_metadata        = {}
+let PVF_num_time_points = 0
+let PVF_Vx              = {}
+let PVF_Vy              = {}
+let PVF_Vz              = {}
 
-const PVF_condA_fname = ""
-const PVF_condA_data  = {}
+let PVF_condA_fname = ""
+let PVF_condA_data  = {}
 
-const PVF_pattern_fname = ""
-const PVF_pattern_data  = {}
+let PVF_pattern_fname = ""
+let PVF_pattern_data  = {}
 
-const PVF_streamline_folder = ""
-const PVF_streamlines_timeWindows = {}
+let PVF_streamline_folder = ""
+let PVF_streamlines_timeWindows = {}
 
 // PVF data directory
-const PVF_SUBJECTS_DIR = path.join(__dirname, 'pvf_data', 'pvf_subjects');
+let PVF_SUBJECTS_DIR = path.join(__dirname, 'pvf_data', 'pvf_subjects');
 
 // Middleware
 app.use(cors());
@@ -80,79 +80,6 @@ async function startServer() {
 
 startServer();
 
-// // Function to generate vector field data
-// function generateVectorField(type = 'random', resolution = 8) {
-//     const vectorField = [];
-//     const size = resolution;
-//     const spacing = 50 / (size - 1);
-    
-//     for (let i = 0; i < size; i++) {
-//         for (let j = 0; j < size; j++) {
-//             for (let k = 0; k < size; k++) {
-//                 // Calculate position
-//                 const x = i * spacing - 10;
-//                 const y = j * spacing - 10;
-//                 const z = k * spacing - 10;
-                
-//                 // Calculate vector based on field type
-//                 let vx, vy, vz;
-                
-//                 switch (type) {
-//                     case 'random':
-//                         vx = Math.random() * 2 - 1;
-//                         vy = Math.random() * 2 - 1;
-//                         vz = Math.random() * 2 - 1;
-//                         break;
-                        
-//                     case 'curl':
-//                         // Curl field example: v = (-y, x, 0)
-//                         vx = -y;
-//                         vy = x;
-//                         vz = 0;
-//                         break;
-                        
-//                     case 'divergence':
-//                         // Divergent field example: v = (x, y, z)
-//                         vx = x;
-//                         vy = y;
-//                         vz = z;
-//                         break;
-                        
-//                     case 'vortex':
-//                         // Vortex field
-//                         const r = Math.sqrt(x * x + y * y) + 0.1;
-//                         vx = -y / r;
-//                         vy = x / r;
-//                         vz = 0;
-//                         break;
-                        
-//                     case 'custom':
-//                         // Custom field
-//                         vx = Math.sin(x) * Math.cos(y);
-//                         vy = Math.cos(y) * Math.sin(z);
-//                         vz = Math.sin(z) * Math.cos(x);
-//                         break;
-//                 }
-                
-//                 // Normalize vector
-//                 const magnitude = Math.sqrt(vx * vx + vy * vy + vz * vz);
-//                 if (magnitude > 0) {
-//                     vx /= magnitude;
-//                     vy /= magnitude;
-//                     vz /= magnitude;
-//                 }
-                
-//                 vectorField.push({
-//                     position: { x, y, z },
-//                     direction: { x: vx, y: vy, z: vz },
-//                     magnitude
-//                 });
-//             }
-//         }
-//     }
-    
-//     return vectorField;
-// }
 
 // Function to list subjects
 async function listSubjects(subjectsDir){
@@ -179,17 +106,19 @@ async function laodPVFStreamlines(timepoint) {
     //     const data                 = fs.readFileSync(PVF_streamline_fname, 'utf8');
     //     const PVF_streamlines_timeWindows[i] = JSON.parse(data);
 
-
 };
 
 
 async function processPVFTimeWindow(PVF_timeWindowID) {
+    resp_value = {};
     resp_value.current_PVF = {};
-    resp_value.Vx = PVF_Vx.Vx[:][:][:][PVF_timeWindowID];
-    resp_value.Vy = PVF_Vy[PVF_timeWindowID];
-    resp_value.Vz = PVF_Vz[PVF_timeWindowID];
+    const PVF_num_time_points = getArrayDimensionsLength(PVF_Vx.Vx)[3];
+    console.log('Number of time points:', PVF_num_time_points);
+    console.log('Dimensions of Vx:', getArrayDimensionsLength(PVF_Vx.Vx[PVF_timeWindowID]));
+    // resp_value.Vx = PVF_Vx.Vx[][][][PVF_timeWindowID];
+    // resp_value.Vy = PVF_Vy[PVF_timeWindowID];
+    // resp_value.Vz = PVF_Vz[PVF_timeWindowID];
     resp_value.subjectID = subject_ID;
-
 
     return resp_value
 }
@@ -217,7 +146,7 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
     const PVF_condA_fname       = metadata_fname.replace('_metadata.json', '_condA.json');
     const PVF_pattern_fname     = metadata_fname.replace('_metadata.json', '_pattern_detection.json');
     const PVF_streamline_folder = metadata_fname.replace('_metadata.json', '_streamlines');
-    const resp_value = {};
+    const resp_value            = {};
 
 
     // PVF meta data
@@ -237,10 +166,9 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         // 同步方法：无回调，直接获取结果
         const data   = fs.readFileSync(PVF_Vx_fname, 'utf8');
         PVF_Vx = JSON.parse(data);
-        PVF_num_time_points = getArrayDimensionsLength(PVF_Vx.Vx)[3];
         resp_value.Vx = Object.keys(PVF_Vx);
         console.log('读取成功:', resp_value.Vx);
-        console.log('Number of time points:', PVF_num_time_points);
+        processPVFTimeWindow(0);
     } catch (err) {
         // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
@@ -250,7 +178,7 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
     try {
         // 同步方法：无回调，直接获取结果
         const data          = fs.readFileSync(PVF_Vy_fname, 'utf8');
-        const PVF_Vy        = JSON.parse(data);
+        PVF_Vy        = JSON.parse(data);
         resp_value.Vy = Object.keys(PVF_Vy);
         console.log('读取成功:', resp_value.Vy);
     } catch (err) {
@@ -262,7 +190,7 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
     try {
         // 同步方法：无回调，直接获取结果
         const data = fs.readFileSync(PVF_Vz_fname, 'utf8');
-        const PVF_Vz = JSON.parse(data);
+        PVF_Vz = JSON.parse(data);
         resp_value.Vz = Object.keys(PVF_Vz);
         console.log('读取成功:', resp_value.Vz);
     } catch (err) {
@@ -270,29 +198,29 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         console.error('处理失败:', err);
     }
 
-    // // condition number of operator A
-    // try {
-    //     // 同步方法：无回调，直接获取结果
-    //     const data = fs.readFileSync(PVF_condA_fname, 'utf8');
-    //     const PVF_condA_data = JSON.parse(data);
-    //     resp_value.condA = Object.keys(PVF_condA_data);
-    //     console.log('读取成功:', resp_value.condA);
-    // } catch (err) {
-    // // 捕获所有错误（读取失败或解析失败）
-    //     console.error('处理失败:', err);
-    // }
+    // condition number of operator A
+    try {
+        // 同步方法：无回调，直接获取结果
+        const data = fs.readFileSync(PVF_condA_fname, 'utf8');
+        const PVF_condA_data = JSON.parse(data);
+        resp_value.condA = Object.keys(PVF_condA_data);
+        console.log('读取成功:', resp_value.condA);
+    } catch (err) {
+        // 捕获所有错误（读取失败或解析失败）
+        console.error('处理失败:', err);
+    }
     
-    // // patterns - singularities
-    // try {
-    //     // 同步方法：无回调，直接获取结果
-    //     const data = fs.readFileSync(PVF_pattern_fname, 'utf8');
-    //     const PVF_pattern_data = JSON.parse(data);
-    //     resp_value.pattern = Object.keys(PVF_pattern_data);
-    //     console.log('读取成功:', resp_value.pattern);
-    // } catch (err) {
-    // // 捕获所有错误（读取失败或解析失败）
-    //     console.error('处理失败:', err);
-    // }
+    // patterns - singularities and extent of singularities
+    try {
+        // 同步方法：无回调，直接获取结果
+        const data = fs.readFileSync(PVF_pattern_fname, 'utf8');
+        const PVF_pattern_data = JSON.parse(data);
+        resp_value.pattern = Object.keys(PVF_pattern_data);
+        console.log('读取成功:', resp_value.pattern);
+    } catch (err) {
+        // 捕获所有错误（读取失败或解析失败）
+        console.error('处理失败:', err);
+    }
     
     // // streamlines
     // try {
@@ -311,5 +239,4 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
     // resp_value.PVF_data = processPVFTimeWindow(0)
     // console.log(resp_value);
     return resp_value;
-    
 };
