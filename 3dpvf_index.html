@@ -346,10 +346,12 @@
         
         // PVF variables
         let subject_ID                  = "";
+        let PVF_volume_mask             = "";
+        let PVF_dimension               = 50;
+        let PVF_num_time_points         = 100;
         let PVF_Vx                      = [];
         let PVF_Vy                      = [];
         let PVF_Vz                      = [];
-        let PVF_num_time_points         = 100;
         let PVF_condA_data              = {};
         let PVF_pattern_data            = {};
         let PVF_streamlines_timeWindows = {};
@@ -573,6 +575,46 @@
             document.getElementById('reset-animation').addEventListener('click', resetAnimation);
         }
         
+        // load PVF vector field
+        function loadPVFVectorField(timepoint) {
+            vectorField = [];
+            const size = settings.resolution;
+            const spacing = 50 / (size - 1);
+            
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    for (let k = 0; k < size; k++) {
+                        // Calculate position
+                        const x = i * spacing - 10;
+                        const y = j * spacing - 10;
+                        const z = k * spacing - 10;
+                        
+                        // Calculate vector based on field type
+                        let vx, vy, vz;
+                        
+                        vx = PVF_Vx[i][j][k];
+                        vy = PVF_Vy[i][j][k];
+                        vz = PVF_Vz[i][j][k];
+                        
+                        // Normalize vector
+                        const magnitude = Math.sqrt(vx * vx + vy * vy + vz * vz);
+                        if (magnitude > 0) {
+                            vx /= magnitude;
+                            vy /= magnitude;
+                            vz /= magnitude;
+                        }
+                        
+                        vectorField.push({
+                            position: new THREE.Vector3(x, y, z),
+                            direction: new THREE.Vector3(vx, vy, vz),
+                            magnitude: magnitude
+                        });
+                    }
+                }
+            }
+        }
+
+
         // Generate vector field based on settings
         function generateVectorField() {
             vectorField = [];
