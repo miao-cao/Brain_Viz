@@ -98,7 +98,7 @@
                 </h2>
 
 
-                <div class="mb-4 gap-2">
+                <div class="mb-5">
                     <!-- <div>
                         <label class="block text-sm font-medium text-light/80 mb-1">Subject List</label>
                     </div> -->
@@ -112,44 +112,31 @@
                             </svg>
                         </div>
                     </div> -->
-                    <div>
-                        <label class="block text-sm font-medium text-light/80 mb-1 gap-2">Subject List</label>
+                    <div class="mb-4 gap-2">
+                        <label class="block text-sm font-medium text-light/80 mb-3">Subject List</label>
                         <select id="subject-select" class="w-full bg-dark/50 border border-white/10 rounded-lg px-3 py-2 text-light focus:outline-none focus:ring-2 focus:ring-primary/50">
                             <option value="">Loading subject names...</option>
                         </select>
                     </div>
+                    <div class="text-sm text-gray-600 gap-2">
+                        <!-- <button id="reload-button" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="loadSubjectList()">Load Subjects</button> -->
+                        <button id="reload-button" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-center gap-4" onclick="loadSubjectList()">
+                            <i class="fas fa-list"></i>
+                            <span>Load Subjects</span>
+                        </button>
+                    </div>
                 </div>
 
-                <div class="text-sm text-gray-600 gap-4">
-                    <!-- <button id="reload-button" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="loadSubjectList()">Load Subjects</button> -->
-                    <button id="reload-button" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-center gap-4" onclick="loadSubjectList()">
-                        <i class="fas fa-list"></i>
-                        <span>Load Subjects</span>
-                    </button>
-                </div>
-
+                <!-- File Button -->
                 <div class="mb-4 gap-4">
-                    <!-- <div>
-                        <label class="block text-sm font-medium text-light/80 mb-1">File List</label>
-                    </div> -->
-                    <!-- <div class="relative">
-                        <select id="file-select" class="block w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 appearance-none">
-                            <option value="">Loading files ...</option>
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-                    </div> -->
-                    <div class="gap-4">
-                        <label class="block text-sm font-medium text-light/80 mb-1 gap-4">File List</label>
+                    <div class="mb-4 gap-2">
+                        <label class="block text-sm font-medium text-light/80 mb-3">File List</label>
                         <select id="file-select" class="w-full bg-dark/50 border border-white/10 rounded-lg px-3 py-2 text-light focus:outline-none focus:ring-2 focus:ring-primary/50 gap-4">
                             <option value="">Loading files...</option>
                         </select>
                     </div>
-                    <div class="text-sm text-gray-600">
-                        <button id="load-file-button" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-center gap-2" onclick="loadFile()">
+                    <div class="text-sm text-gray-600 mb-3">
+                        <button id="load-file-button" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-center gap-4" onclick="loadFile()">
                             <i class="fas fa-file" aria-hidden="true"></i>
                             <span>Load Meta Data Files</span>
                         </button>
@@ -168,8 +155,8 @@
                 </div>
                 
                 <div id="error-message" class="mt-4 p-3 bg-red-50 rounded-lg hidden">
-                    <h3 class="font-medium text-red-800">Error:</h3>
-                    <p id="error-details" class="text-sm text-red-700"></p>
+                    <h3 class="font-medium text-blue-800">Message:</h3>
+                    <p id="error-details" class="text-sm text-blue-700"></p>
                 </div>
                 </div>
 
@@ -182,7 +169,7 @@
                     
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-light/80 mb-1">Field Type</label>
+                            <label class="block text-sm font-medium text-light/80 mb-3">Field Type</label>
                             <select id="field-type" class="w-full bg-dark/50 border border-white/10 rounded-lg px-3 py-2 text-light focus:outline-none focus:ring-2 focus:ring-primary/50">
                                 <option value="random">Random</option>
                                 <option value="curl">Curl</option>
@@ -357,26 +344,36 @@
         const errorMessage = document.getElementById('error-message');
         const errorDetails = document.getElementById('error-details');
         
+        // PVF variables
+        let subject_ID                  = "";
+        let PVF_Vx                      = [];
+        let PVF_Vy                      = [];
+        let PVF_Vz                      = [];
+        let PVF_num_time_points         = 100;
+        let PVF_condA_data              = {};
+        let PVF_pattern_data            = {};
+        let PVF_streamlines_timeWindows = {};
+
         // Three.js Scene Variables
         let scene, camera, renderer, controls;
-        let vectorField = [];
+        let vectorField   = [];
         let vectorObjects = [];
-        let particles = [];
+        let particles     = [];
         let gridHelper;
         let animationId;
         let isAnimating = false;
-        let lastTime = 0;
-        let fps = 0;
+        let lastTime    = 0;
+        let fps         = 0;
         
         // Settings
         let settings = {
             fieldType: 'random',
-            resolution: 8,
+            resolution: 50,
             vectorScale: 0.8,
-            showGrid: true,
+            showGrid: false,
             colorScheme: 'speed',
             vectorDisplay: 'arrows',
-            showStreamlines: false,
+            showStreamlines: true,
             animationSpeed: 1,
             particleCount: 100
         };
@@ -412,6 +409,7 @@
                     loadingIndicator.classList.add('hidden');
                 }, 300);
             }, 800);
+            loadSubjectList();
         }
         
         // Toggle sidebar
@@ -579,7 +577,7 @@
         function generateVectorField() {
             vectorField = [];
             const size = settings.resolution;
-            const spacing = 50 / (size - 1);
+            const spacing = 100 / (size - 1);
             
             for (let i = 0; i < size; i++) {
                 for (let j = 0; j < size; j++) {
@@ -623,9 +621,9 @@
                                 
                             case 'custom':
                                 // Custom field - could be modified based on user input
-                                vx = Math.sin(x) * Math.cos(y);
-                                vy = Math.cos(y) * Math.sin(z);
-                                vz = Math.sin(z) * Math.cos(x);
+                                vx = PVF_Vx[i][j][k];
+                                vy = PVF_Vy[i][j][k];
+                                vz = PVF_Vz[i][j][k];
                                 break;
                         }
                         
@@ -1127,6 +1125,7 @@
         
         // Initialize the application when DOM is loaded
         document.addEventListener('DOMContentLoaded', init);
+        // 页面加载时加载根目录文件夹
         
         // Clean up when window is closed
         window.addEventListener('beforeunload', () => {
@@ -1141,7 +1140,7 @@
         async function loadSubjectList(path = '') {
             try {
                 // 显示加载状态
-                folderSelect.innerHTML = '<option value="">Loading folders...</option>';
+                folderSelect.innerHTML = '<option value="">Loading subject names...</option>';
                 hideError();
                 
                 // 调用API获取文件夹列表
@@ -1176,13 +1175,13 @@
                 if (Object.keys(data).length === 0) {
                     const noFolderOption = document.createElement('option');
                     noFolderOption.value = '';
-                    noFolderOption.textContent = 'No folders found';
+                    noFolderOption.textContent = 'No metadata Json files found';
                     noFolderOption.disabled = true;
                     folderSelect.appendChild(noFolderOption);
                 }
                 
             } catch (error) {
-                console.error('Error loading folders:', error);
+                console.error('Error loading subject names:', error);
                 showError(error.message);
                 folderSelect.innerHTML = '<option value="">Failed to load subject names</option>';
             }
@@ -1241,8 +1240,6 @@
             // 这里可以实现加载选中文件夹内文件的逻辑
             subject = folderSelect.value;
             file = fileSelect.value;
-            console.log(`Load file: ${subject}`);
-            console.log(`Load file: ${file}`);
             const response = await fetch(`http://localhost:3000/api/load-subjects-files?subject=${encodeURIComponent(subject)}&file=${encodeURIComponent(file)}`);
                 
                 
@@ -1252,8 +1249,18 @@
             }
             
             const data = await response.json();
-            console.log(data);
+            subject_ID                  = data.subject_ID;
+            PVF_Vx                      = data.Vx;
+            PVF_Vy                      = data.Vy;
+            PVF_Vz                      = data.Vz;
+            PVF_condA_data              = data.condA;
+            PVF_pattern_data            = data.patterns;
+            PVF_streamlines_timeWindows = data.streamlines;
+            PVF_num_time_points         = data.PVF_num_time_points;
+            // showError(Object.keys(data));
+            // showError(data);
             showError(Object.keys(data));
+            // showError(`Subject name: ${subject_ID}. Number of time points: ${PVF_num_time_points}.`);
         }
 
         // 显示错误信息
@@ -1286,11 +1293,6 @@
             
             // 如果需要实现多级浏览，可以在这里递归加载子文件夹
             // loadSubjectList(selectedPath);
-        });
-        
-        // 页面加载时加载根目录文件夹
-        document.addEventListener('DOMContentLoaded', () => {
-            loadSubjectList();
         });
     </script>
 </body>
