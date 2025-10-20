@@ -177,6 +177,7 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         resp_value.volume_mask = PVF_metadata.volume_mask;
         console.log('读取成功:', Object.keys(PVF_metadata));
         console.log('Number of vectors:', sum3DMatrix(resp_value.volume_mask));
+        console.log('Values:', resp_value.volume_mask[49][49][49]);
     } catch (err) {
         // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
@@ -188,9 +189,9 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         const data   = fs.readFileSync(PVF_Vx_fname, 'utf8');
         PVF_Vx                         = JSON.parse(data);
         PVF_num_time_points            = getArrayDimensionsLength(PVF_Vx.Vx)[3];
-        resp_value.PVF_dimensions      = getArrayDimensionsLength(PVF_Vx.Vx)[0];
+        resp_value.PVF_dimension       = getArrayDimensionsLength(PVF_Vx.Vx)[0];
         resp_value.PVF_num_time_points = PVF_num_time_points;
-        console.log('PVF dimensions:', resp_value.PVF_dimensions);
+        console.log('PVF dimensions:', resp_value.PVF_dimension);
         console.log('读取成功 Vx:', Object.keys(PVF_Vx));
     } catch (err) {
         // 捕获所有错误（读取失败或解析失败）
