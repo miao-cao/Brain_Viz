@@ -171,8 +171,8 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
     // PVF meta data
     try {
         // 同步方法：无回调，直接获取结果
-        const data         = fs.readFileSync(metadata_fname, 'utf8');
-        PVF_metadata           = JSON.parse(data);
+        const data   = fs.readFileSync(metadata_fname, 'utf8');
+        PVF_metadata = JSON.parse(data);
         resp_value.subject_ID  = subjectName;
         resp_value.volume_mask = PVF_metadata.volume_mask;
         console.log('读取成功:', Object.keys(PVF_metadata));
@@ -185,7 +185,7 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
     // PVF Vx
     try {
         // 同步方法：无回调，直接获取结果
-        const data   = fs.readFileSync(PVF_Vx_fname, 'utf8');
+        const data                     = fs.readFileSync(PVF_Vx_fname, 'utf8');
         PVF_Vx                         = JSON.parse(data);
         PVF_num_time_points            = getArrayDimensionsLength(PVF_Vx.Vx)[3];
         resp_value.PVF_dimension       = getArrayDimensionsLength(PVF_Vx.Vx)[0];
