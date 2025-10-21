@@ -119,8 +119,7 @@
                         </select>
                     </div>
                     <div class="text-sm text-gray-600 gap-2">
-                        <!-- <button id="reload-button" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700" onclick="loadSubjectList()">Load Subjects</button> -->
-                        <button id="reload-button" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-center gap-4" onclick="loadSubjectList()">
+                        <button id="load-subject-button" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-center gap-4" onclick="loadSubjectList()">
                             <i class="fas fa-list"></i>
                             <span>Load Subjects</span>
                         </button>
@@ -168,7 +167,7 @@
                     </h2>
                     
                     <div class="space-y-4">
-                        <div>
+                        <!-- <div>
                             <label class="block text-sm font-medium text-light/80 mb-3">Field Type</label>
                             <select id="field-type" class="w-full bg-dark/50 border border-white/10 rounded-lg px-3 py-2 text-light focus:outline-none focus:ring-2 focus:ring-primary/50">
                                 <option value="random">Random</option>
@@ -177,9 +176,9 @@
                                 <option value="vortex">Vortex</option>
                                 <option value="custom">Custom</option>
                             </select>
-                        </div>
+                        </div> -->
                         
-                        <div>
+                        <!-- <div>
                             <label class="block text-sm font-medium text-light/80 mb-1">Resolution</label>
                             <input type="range" id="resolution" min="3" max="20" value="8" 
                                 class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary">
@@ -187,11 +186,11 @@
                                 <span>Low</span>
                                 <span>High</span>
                             </div>
-                        </div>
+                        </div> -->
                         
                         <div>
                             <label class="block text-sm font-medium text-light/80 mb-1">Vector Scale</label>
-                            <input type="range" id="vector-scale" min="0.1" max="2" step="0.1" value="0.8" 
+                            <input type="range" id="vector-scale" min="0.1" max="2" step="0.1" value="1" 
                                 class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary">
                         </div>
                         
@@ -234,19 +233,36 @@
                             </select>
                         </div>
                         
-                        <div>
-                            <label class="block text-sm font-medium text-light/80 mb-1">Show Streamlines</label>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="show-streamlines" 
-                                    class="w-4 h-4 text-primary bg-dark/50 border border-white/10 rounded focus:ring-primary/50">
-                                <label for="show-streamlines" class="ml-2 text-sm text-light/80">Display particle paths</label>
-                            </div>
+
+
+                        <label class="block text-sm font-medium text-light/80 mb-1">Show PVF vectors</label>
+                        <!-- Present PVF button -->
+                        <div class="flex items-center">
+                            <!-- <input type="checkbox" id="show-streamlines" 
+                                class="w-4 h-4 text-primary bg-dark/50 border border-white/10 rounded focus:ring-primary/50">
+                            <label for="show-streamlines" class="ml-2 text-sm text-light/80">Display particle paths</label> -->
+                            <button id="present-pvf" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-left gap-2" onclick="loadPVFVectorField()">
+                                <i class="fas fa-play"></i>
+                                <span>Present PVF</span>
+                            </button>
                         </div>
-                    </div>
+
+                        <label class="block text-sm font-medium text-light/80 mb-4">Show Streamlines</label>
+                        <div class="flex items-center">
+                            <!-- <input type="checkbox" id="show-streamlines" 
+                                class="w-4 h-4 text-primary bg-dark/50 border border-white/10 rounded focus:ring-primary/50">
+                            <label for="show-streamlines" class="ml-2 text-sm text-light/80">Display particle paths</label> -->
+                            <button id="present-streamlines" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-left gap-2">
+                                <i class="fas fa-play"></i>
+                                <span>Present Streamlines</span>
+                            </button>
+                        </div>
+                        </div>
+                    
                 </div>
                 
                 <!-- Animation Settings -->
-                <div class="panel-gradient rounded-xl p-4 border border-white/10">
+                <div class="panel-gradient rounded-xl p-4 border border-white/10 mb-4">
                     <h2 class="text-lg font-medium mb-3 flex items-center gap-2">
                         <i class="fas fa-play text-primary"></i>
                         Animation
@@ -254,9 +270,13 @@
                     
                     <div class="space-y-4 mb-5">
                         <div>
-                            <label class="block text-sm font-medium text-light/80 mb-1">Animation Speed</label>
-                            <input type="range" id="animation-speed" min="0.1" max="5" step="0.1" value="1" 
+                            <label class="block text-sm font-medium text-light/80 mb-1">Time Frame</label>
+                            <input type="range" id="resolution" min="3" max="20" value="8" 
                                 class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary">
+                            <div class="flex justify-between text-xs text-light/60 mt-1">
+                                <span>Tmin=></span>
+                                <span>Tmax=</span>
+                            </div>
                         </div>
                         
                         <div>
@@ -276,19 +296,7 @@
                             </button>
                         </div>
                     </div>
-                    <!-- Present PVF button -->
-                    <div class="space-y-4 mb-3">                        
-                        <div class="flex mb-3 gap-2">
-                            <button id="present-pvf" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-center gap-2" onclick="loadPVFVectorField()">
-                                <i class="fas fa-play"></i>
-                                <span>Present PVF</span>
-                            </button>
-                            <button id="present-streamlines" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-center gap-2">
-                                <i class="fas fa-play"></i>
-                                <span>Present Streamlines</span>
-                            </button>
-                        </div>
-                    </div>
+                    
                     <!-- Present Streamlines button -->
                     <!-- Present Singularity button -->
                 </div>
@@ -305,7 +313,7 @@
             <div id="loading-indicator" class="absolute inset-0 flex items-center justify-center bg-dark/70 backdrop-blur-sm z-30">
                 <div class="text-center">
                     <div class="inline-block w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"></div>
-                    <p class="text-light/80">Loading vector field...</p>
+                    <p class="text-light/80">Loading PVF...</p>
                 </div>
             </div>
             
@@ -313,7 +321,7 @@
             <div id="stats-overlay" class="absolute bottom-4 right-4 bg-dark/70 backdrop-blur-sm rounded-lg p-3 border border-white/10 text-xs text-light/80">
                 <div class="flex items-center gap-2 mb-1">
                     <i class="fas fa-info-circle text-primary"></i>
-                    <span class="font-medium">Vector Field Stats</span>
+                    <span class="font-medium">Vector Stats</span>
                 </div>
                 <div class="space-y-1">
                     <div class="flex justify-between">
@@ -371,7 +379,11 @@
         let PVF_pattern_data            = {};
         let PVF_streamlines_timeWindows = {};
 
+        let volume_size = 50 // where brain, vectors and streamlines reside
+
         // GUI parameters
+        t_min             = 0
+        t_max             = 100
         current_timepoint = 0
 
         // Three.js Scene Variables
@@ -388,7 +400,7 @@
         // Settings
         let settings = {
             fieldType: 'random',
-            resolution: 50,
+            resolution: 20,
             vectorScale: 0.8,
             showGrid: false,
             colorScheme: 'speed',
@@ -411,13 +423,13 @@
             setupThreeJS();
             
             // Generate initial vector field
-            // generateVectorField();
+            generateVectorField();
             
             // Create vector objects
-            // createVectorObjects();
+            createVectorObjects();
             
             // Setup stats
-            // updateStats();
+            updateStats();
             
             // Start animation loop
             // animate();
@@ -429,6 +441,7 @@
                     loadingIndicator.classList.add('hidden');
                 }, 300);
             }, 800);
+
             loadSubjectList();
         }
         
@@ -527,17 +540,17 @@
         
         // Setup settings listeners
         function setupSettingsListeners() {
-            // Field type
-            document.getElementById('field-type').addEventListener('change', (e) => {
-                settings.fieldType = e.target.value;
-                regenerateVectorField();
-            });
+            // // Field type
+            // document.getElementById('field-type').addEventListener('change', (e) => {
+            //     settings.fieldType = e.target.value;
+            //     regenerateVectorField();
+            // });
             
-            // Resolution
-            document.getElementById('resolution').addEventListener('input', (e) => {
-                settings.resolution = parseInt(e.target.value);
-                regenerateVectorField();
-            });
+            // // Resolution
+            // document.getElementById('resolution').addEventListener('input', (e) => {
+            //     settings.resolution = parseInt(e.target.value);
+            //     regenerateVectorField();
+            // });
             
             // Vector scale
             document.getElementById('vector-scale').addEventListener('input', (e) => {
@@ -563,28 +576,28 @@
                 updateVectorObjects();
             });
             
-            // Show streamlines
-            document.getElementById('show-streamlines').addEventListener('change', (e) => {
-                settings.showStreamlines = e.target.checked;
-                if (settings.showStreamlines) {
-                    createParticles();
-                } else {
-                    removeParticles();
-                }
-            });
+            // // Show streamlines
+            // document.getElementById('show-streamlines').addEventListener('change', (e) => {
+            //     settings.showStreamlines = e.target.checked;
+            //     if (settings.showStreamlines) {
+            //         createParticles();
+            //     } else {
+            //         removeParticles();
+            //     }
+            // });
             
             // Animation speed
-            document.getElementById('animation-speed').addEventListener('input', (e) => {
-                settings.animationSpeed = parseFloat(e.target.value);
-            });
+            // document.getElementById('animation-speed').addEventListener('input', (e) => {
+            //     settings.animationSpeed = parseFloat(e.target.value);
+            // });
             
-            // Particle count
-            document.getElementById('particle-count').addEventListener('input', (e) => {
-                settings.particleCount = parseInt(e.target.value);
-                if (settings.showStreamlines) {
-                    createParticles();
-                }
-            });
+            // // Particle count
+            // document.getElementById('particle-count').addEventListener('input', (e) => {
+            //     settings.particleCount = parseInt(e.target.value);
+            //     if (settings.showStreamlines) {
+            //         createParticles();
+            //     }
+            // });
             
             // Play/pause animation
             document.getElementById('play-pause').addEventListener('click', toggleAnimation);
@@ -594,11 +607,11 @@
         }
         
         // load PVF vector field
-        function loadPVFVectorField(timepoint) {
+        function loadPVFVectorField() {
             vectorField = [];
             const size = PVF_dimension;
-            const spacing = 50 / (size - 1);
-            
+            const spacing = volume_size / (size - 1);
+            showError("Loading PVF Vector Field...")
             for (let i = 0; i < size; i++) {
                 for (let j = 0; j < size; j++) {
                     for (let k = 0; k < size; k++) {
@@ -632,7 +645,14 @@
                     }
                 }
             }
+            
+            // loadingIndicator.classList.remove('hidden', 'opacity-0');
             createVectorObjects()
+            // Update controls
+            controls.update();
+            
+            // Render scene
+            renderer.render(scene, camera);
         }
 
         // Generate vector field based on settings
@@ -717,7 +737,7 @@
             
             // Generate new vector field
             // generateVectorField();
-            loadPVFVectorField(current_timepoint);
+            loadPVFVectorField();
             
             // Create new vector objects
             createVectorObjects();
@@ -1199,7 +1219,7 @@
         });
         
         
-        // 加载文件夹列表
+        // 加载subject列表
         async function loadSubjectList(path = '') {
             try {
                 // 显示加载状态
@@ -1250,6 +1270,7 @@
             }
         }
 
+        // 加载文件列表
         async function loadFileList(subject) {
             // 这里可以实现加载选中文件夹内文件的逻辑
             console.log(`Load files for subject: ${subject}`);

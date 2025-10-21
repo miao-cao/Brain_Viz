@@ -177,7 +177,6 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         resp_value.volume_mask = PVF_metadata.volume_mask;
         console.log('读取成功:', Object.keys(PVF_metadata));
         console.log('Number of vectors:', sum3DMatrix(resp_value.volume_mask));
-        console.log('Values:', resp_value.volume_mask[49][49][49]);
     } catch (err) {
         // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
