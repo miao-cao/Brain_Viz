@@ -611,7 +611,9 @@
             vectorField = [];
             const size = PVF_dimension;
             const spacing = volume_size / (size - 1);
-            showError("Loading PVF Vector Field...")
+            // Show loading indicator
+            loadingIndicator.classList.remove('hidden', 'opacity-0');
+
             for (let i = 0; i < size; i++) {
                 for (let j = 0; j < size; j++) {
                     for (let k = 0; k < size; k++) {
@@ -645,7 +647,7 @@
                     }
                 }
             }
-            
+
             // loadingIndicator.classList.remove('hidden', 'opacity-0');
             createVectorObjects()
             // Update controls
@@ -653,6 +655,13 @@
             
             // Render scene
             renderer.render(scene, camera);
+            // Hide loading indicator
+            setTimeout(() => {
+                loadingIndicator.classList.add('opacity-0');
+                setTimeout(() => {
+                    loadingIndicator.classList.add('hidden');
+                }, 300);
+            }, 500);
         }
 
         // Generate vector field based on settings
