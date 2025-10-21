@@ -6,13 +6,24 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 
+// PVF metadata
 let subject_ID          = ""
 let PVF_metadata_fname  = ""
 let PVF_metadata        = {}
 let PVF_num_time_points = 0
-let PVF_Vx              = {}
-let PVF_Vy              = {}
-let PVF_Vz              = {}
+
+// PVF data
+let PVF_Vx    = {}
+let PVF_Vy    = {}
+let PVF_Vz    = {}
+let PVF_X     = []
+let PVF_Y     = []
+let PVF_Z     = []
+let dim_shift = [25, 25, 25]
+const temporary_map_dim_shifts = {
+    "sub-003": [25, 25, 20],
+    "sub-005": [25, 25, 17],
+}
 
 let PVF_condA_fname = ""
 let PVF_condA_data  = {}
@@ -43,8 +54,14 @@ app.get('/api/list-subjects-files', async(req, res) => {
 });
 
 app.get('/api/load-subjects-files', async(req, res) => {
-    const data = await readPVFJson(PVF_SUBJECTS_DIR, req.query.subject, req.query.file);
-    res.json(data);
+    if (subject_ID == req.query.subject && PVF_metadata_fname == req.query.file){
+        const data = await resp_PVFJson(0);
+        res.json(data);
+    } else {
+        const data = await readPVFJson(PVF_SUBJECTS_DIR, req.query.subject, req.query.file);
+        res.json(data);
+    }
+
 });
 
 app.get('/api/read-PVF-streamlines', async(req, res) => {
@@ -175,8 +192,15 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         PVF_metadata = JSON.parse(data);
         resp_value.subject_ID  = subjectName;
         resp_value.volume_mask = PVF_metadata.volume_mask;
+        if (Object.hasOwn(temporary_map_dim_shifts, subject_ID)){
+            dim_shift = temporary_map_dim_shifts[subject_ID];   
+        } else {
+            dim_shift = PVF_metadata.dim_shift;
+        }
         console.log('读取成功:', Object.keys(PVF_metadata));
         console.log('Number of vectors:', sum3DMatrix(resp_value.volume_mask));
+        console.log('Dim shift:', dim_shift);
+        
     } catch (err) {
         // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
@@ -218,6 +242,8 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
     }
+
+    // {x, y, z} = generate_xyz_coordinates(resp_value.PVF_dimension, dim_shift);
 
     // condition number of operator A
     try {
@@ -261,11 +287,30 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
     resp_value.Vx = PVF_data.Vx;
     resp_value.Vy = PVF_data.Vy;
     resp_value.Vz = PVF_data.Vz;
+    resp_value.X  = PVF_X;
+    resp_value.Y  = PVF_Y;
+    resp_value.Z  = PVF_Z;
     resp_value.condA = arr_average(PVF_condA_data[`${default_first_timepoint}`]);
     resp_value.patterns = PVF_pattern_data[`${default_first_timepoint}`];
     resp_value.streamlines = PVF_streamlines_timeWindows[`${default_first_timepoint}`];
     return resp_value;
 };
+
+async function resp_PVFJson(timepoint){
+    const resp_value = {};
+    const PVF_data   = processPVFTimeWindow(timepoint)
+    resp_value.subject_ID  = subjectName;
+    resp_value.volume_mask = PVF_metadata.volume_mask;
+    resp_value.Vx          = PVF_data.Vx;
+    resp_value.Vy          = PVF_data.Vy;
+    resp_value.Vz          = PVF_data.Vz;
+    resp_value.X           = PVF_X;
+    resp_value.Y           = PVF_Y;
+    resp_value.Z           = PVF_Z;
+    resp_value.condA       = arr_average(PVF_condA_data[`${default_first_timepoint}`]);
+    resp_value.patterns    = PVF_pattern_data[`${default_first_timepoint}`];
+    resp_value.streamlines = PVF_streamlines_timeWindows[`${default_first_timepoint}`];
+}
 
 async function loadPVFStreamlines(timepoint) {
     // loading PVF, streamlines, condA, patterns and streamlines

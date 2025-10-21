@@ -432,15 +432,15 @@
             updateStats();
             
             // Start animation loop
-            // animate();
+            animate();
             
-            // Hide loading indicator
-            setTimeout(() => {
-                loadingIndicator.classList.add('opacity-0');
-                setTimeout(() => {
-                    loadingIndicator.classList.add('hidden');
-                }, 300);
-            }, 800);
+            // // Hide loading indicator
+            // setTimeout(() => {
+            //     loadingIndicator.classList.add('opacity-0');
+            //     setTimeout(() => {
+            //         loadingIndicator.classList.add('hidden');
+            //     }, 300);
+            // }, 800);
 
             loadSubjectList();
         }
@@ -609,9 +609,10 @@
         // load PVF vector field
         function loadPVFVectorField() {
             vectorField = [];
+            settings.resolution = PVF_dimension;
             const size = PVF_dimension;
             const spacing = volume_size / (size - 1);
-            // Show loading indicator
+            // Show loading indicator            
             loadingIndicator.classList.remove('hidden', 'opacity-0');
 
             for (let i = 0; i < size; i++) {
@@ -648,20 +649,25 @@
                 }
             }
 
-            // loadingIndicator.classList.remove('hidden', 'opacity-0');
+            
             createVectorObjects()
             // Update controls
             controls.update();
             
+            // loadingIndicator.classList.remove('hidden', 'opacity-0');
+            
             // Render scene
             renderer.render(scene, camera);
+            
             // Hide loading indicator
-            setTimeout(() => {
-                loadingIndicator.classList.add('opacity-0');
-                setTimeout(() => {
-                    loadingIndicator.classList.add('hidden');
-                }, 300);
-            }, 500);
+            loadingIndicator.classList.add('opacity-0', 'hidden');
+            // Hide loading indicator
+            // setTimeout(() => {
+            //     loadingIndicator.classList.add('opacity-0');
+            //     setTimeout(() => {
+            //         loadingIndicator.classList.add('hidden');
+            //     }, 300);
+            // }, 500);
         }
 
         // Generate vector field based on settings
@@ -758,14 +764,15 @@
             
             // Update stats
             updateStats();
-            
-            // Hide loading indicator
-            setTimeout(() => {
-                loadingIndicator.classList.add('opacity-0');
-                setTimeout(() => {
-                    loadingIndicator.classList.add('hidden');
-                }, 300);
-            }, 500);
+
+            loadingIndicator.classList.add('hidden', 'opacity-0');
+            // // Hide loading indicator
+            // setTimeout(() => {
+            //     loadingIndicator.classList.add('opacity-0');
+            //     setTimeout(() => {
+            //         loadingIndicator.classList.add('hidden');
+            //     }, 300);
+            // }, 500);
         }
         
         // Create vector objects in the scene
