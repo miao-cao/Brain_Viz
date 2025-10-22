@@ -11,6 +11,7 @@ let subject_ID          = ""
 let PVF_metadata_fname  = ""
 let PVF_metadata        = {}
 let PVF_num_time_points = 0
+let PVF_dimension       = 50
 
 // PVF data
 let PVF_Vx    = {}
@@ -54,14 +55,18 @@ app.get('/api/list-subjects-files', async(req, res) => {
 });
 
 app.get('/api/load-subjects-files', async(req, res) => {
+    console.log('Current subject:', subject_ID, 'file:', PVF_metadata_fname)
     if (subject_ID == req.query.subject && PVF_metadata_fname == req.query.file){
         const data = await resp_PVFJson(0);
         res.json(data);
-    } else {
+    } else if (req.query.subject !== "" && req.query.file !== "") {
+        console.log('Loading subject:', req.query.subject, 'file:', req.query.file)
         const data = await readPVFJson(PVF_SUBJECTS_DIR, req.query.subject, req.query.file);
         res.json(data);
+    } else {
+        res.json({message: "No data found."});
     }
-
+    
 });
 
 app.get('/api/read-PVF-streamlines', async(req, res) => {
@@ -106,8 +111,7 @@ async function listSubjectsPVFFiles(subjectsDir, subjectName){
 function processPVFTimeWindow(PVF_timeWindowID) {
     const return_value = {};
     // resp_value.current_PVF = {};
-    console.log('Total number of time points:', PVF_num_time_points);
-    console.log('Processing Vx, Vy, Vz of time point:', PVF_timeWindowID);
+    console.log('Processing Vx, Vy, Vz at time point:', PVF_timeWindowID, 'of', PVF_num_time_points);
     const Vx = [];  
     const Vy = [];
     const Vz = [];
@@ -175,7 +179,7 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
       // console.log(Object.keys(data_stream));
           subject_ID            = subjectName;
     const metadata_fname        = path.join(subjectsDir, subjectName, fileName);
-          PVF_metadata_fname    = metadata_fname;
+          PVF_metadata_fname    = fileName;
     const PVF_Vx_fname          = metadata_fname.replace('_metadata.json', '_Vx.json');
     const PVF_Vy_fname          = metadata_fname.replace('_metadata.json', '_Vy.json');
     const PVF_Vz_fname          = metadata_fname.replace('_metadata.json', '_Vz.json');
@@ -197,7 +201,7 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         } else {
             dim_shift = PVF_metadata.dim_shift;
         }
-        console.log('读取成功:', Object.keys(PVF_metadata));
+        console.log('Successfully loading:', metadata_fname);
         console.log('Number of vectors:', sum3DMatrix(resp_value.volume_mask));
         console.log('Dim shift:', dim_shift);
         
@@ -212,10 +216,11 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         const data                     = fs.readFileSync(PVF_Vx_fname, 'utf8');
         PVF_Vx                         = JSON.parse(data);
         PVF_num_time_points            = getArrayDimensionsLength(PVF_Vx.Vx)[3];
-        resp_value.PVF_dimension       = getArrayDimensionsLength(PVF_Vx.Vx)[0];
+        PVF_dimension                  = getArrayDimensionsLength(PVF_Vx.Vx)[0];
+        resp_value.PVF_dimension       = PVF_dimension
         resp_value.PVF_num_time_points = PVF_num_time_points;
         console.log('PVF dimensions:', resp_value.PVF_dimension);
-        console.log('读取成功 Vx:', Object.keys(PVF_Vx));
+        console.log('Successfully loading Vx:', PVF_Vx_fname);
     } catch (err) {
         // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
@@ -226,7 +231,7 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         // 同步方法：无回调，直接获取结果
         const data          = fs.readFileSync(PVF_Vy_fname, 'utf8');
         PVF_Vy        = JSON.parse(data);
-        console.log('读取成功 Vy:', Object.keys(PVF_Vy));
+        console.log('Successfully loading Vy:', PVF_Vy_fname);
     } catch (err) {
         // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
@@ -237,7 +242,7 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         // 同步方法：无回调，直接获取结果
         const data = fs.readFileSync(PVF_Vz_fname, 'utf8');
         PVF_Vz = JSON.parse(data);
-        console.log('读取成功 Vz:', Object.keys(PVF_Vz));
+        console.log('Successfully loading Vz:', PVF_Vz_fname);
     } catch (err) {
         // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
@@ -251,7 +256,7 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         const data = fs.readFileSync(PVF_condA_fname, 'utf8');
         PVF_condA_data = JSON.parse(data);
         // resp_value.condA = PVF_condA_data;
-        console.log('读取成功 condA:', Object.keys(PVF_condA_data));
+        console.log('Successfully loading condA:', PVF_condA_fname);
     } catch (err) {
         // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
@@ -263,7 +268,7 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         const data = fs.readFileSync(PVF_pattern_fname, 'utf8');
         PVF_pattern_data = JSON.parse(data);
         // resp_value.pattern = Object.keys(PVF_pattern_data);
-        console.log('读取成功 Patterns:', Object.keys(PVF_pattern_data));
+        console.log('Successfully loading Patterns:', PVF_pattern_fname);
     } catch (err) {
         // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
@@ -275,7 +280,7 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
         const PVF_streamline_firstTW_fname = path.join(PVF_streamline_folder, "pvf_streamlines_time_window_0_4.json");
         const data                         = fs.readFileSync(PVF_streamline_firstTW_fname, 'utf8');
         PVF_streamlines_timeWindows  = JSON.parse(data);
-        console.log('读取成功 Streamlines:', Object.keys(PVF_streamlines_timeWindows));
+        console.log('Successfully loading Streamlines:', PVF_streamline_folder);
     } catch (err) {
     // 捕获所有错误（读取失败或解析失败）
         console.error('处理失败:', err);
@@ -299,17 +304,20 @@ async function readPVFJson(subjectsDir, subjectName, fileName) {
 async function resp_PVFJson(timepoint){
     const resp_value = {};
     const PVF_data   = processPVFTimeWindow(timepoint)
-    resp_value.subject_ID  = subjectName;
-    resp_value.volume_mask = PVF_metadata.volume_mask;
-    resp_value.Vx          = PVF_data.Vx;
-    resp_value.Vy          = PVF_data.Vy;
-    resp_value.Vz          = PVF_data.Vz;
-    resp_value.X           = PVF_X;
-    resp_value.Y           = PVF_Y;
-    resp_value.Z           = PVF_Z;
-    resp_value.condA       = arr_average(PVF_condA_data[`${default_first_timepoint}`]);
-    resp_value.patterns    = PVF_pattern_data[`${default_first_timepoint}`];
-    resp_value.streamlines = PVF_streamlines_timeWindows[`${default_first_timepoint}`];
+    resp_value.subject_ID          = subject_ID;
+    resp_value.volume_mask         = PVF_metadata.volume_mask;
+    resp_value.Vx                  = PVF_data.Vx;
+    resp_value.Vy                  = PVF_data.Vy;
+    resp_value.Vz                  = PVF_data.Vz;
+    resp_value.X                   = PVF_X;
+    resp_value.Y                   = PVF_Y;
+    resp_value.Z                   = PVF_Z;
+    resp_value.condA               = arr_average(PVF_condA_data[`${timepoint}`]);
+    resp_value.patterns            = PVF_pattern_data[`${timepoint}`];
+    resp_value.streamlines         = PVF_streamlines_timeWindows[`${timepoint}`];
+    resp_value.PVF_dimension       = PVF_dimension;
+    resp_value.PVF_num_time_points = PVF_num_time_points;
+    return resp_value;
 }
 
 async function loadPVFStreamlines(timepoint) {
@@ -331,7 +339,7 @@ async function loadPVFStreamlines(timepoint) {
             // 同步方法：无回调，直接获取结果
             const data = fs.readFileSync(PVF_streamline_fname, 'utf8');
             PVF_streamlines_timeWindows = JSON.parse(data);
-            console.log('读取成功streamlines:', Object.keys(PVF_streamlines_timeWindows));
+            console.log('Successfully loadingstreamlines:', Object.keys(PVF_streamlines_timeWindows));
         } catch (err) {
             // 捕获所有错误（读取失败或解析失败）
             console.error('处理失败:', err);

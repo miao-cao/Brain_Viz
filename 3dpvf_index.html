@@ -129,7 +129,7 @@
                 <!-- File Button -->
                 <div class="mb-4 gap-4">
                     <div class="mb-4 gap-2">
-                        <label class="block text-sm font-medium text-light/80 mb-3">File List</label>
+                        <label class="block text-sm font-medium text-light/80 mb-3">Meta Data File List</label>
                         <select id="file-select" class="w-full bg-dark/50 border border-white/10 rounded-lg px-3 py-2 text-light focus:outline-none focus:ring-2 focus:ring-primary/50 gap-4">
                             <option value="">Loading files...</option>
                         </select>
@@ -140,7 +140,6 @@
                             <span>Load Meta Data Files</span>
                         </button>
                     </div>
-
                 </div>
 
                 <!-- <div class="text-sm text-gray-600">
@@ -153,74 +152,30 @@
                     <p id="selected-folder-path" class="text-sm text-blue-700"></p>
                 </div>
                 
-                <div id="error-message" class="mt-4 p-3 bg-red-50 rounded-lg hidden">
-                    <h3 class="font-medium text-blue-800">Message:</h3>
-                    <p id="error-details" class="text-sm text-blue-700"></p>
-                </div>
                 </div>
 
                 <!-- Vector Field Settings -->
                 <div class="panel-gradient rounded-xl p-4 border border-white/10">
                     <h2 class="text-lg font-medium mb-3 flex items-center gap-2">
                         <i class="fas fa-sliders-h text-primary"></i>
-                        Field Settings
+                        Vector Field Settings
                     </h2>
                     
-                    <div class="space-y-4">
-                        <!-- <div>
-                            <label class="block text-sm font-medium text-light/80 mb-3">Field Type</label>
-                            <select id="field-type" class="w-full bg-dark/50 border border-white/10 rounded-lg px-3 py-2 text-light focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                <option value="random">Random</option>
-                                <option value="curl">Curl</option>
-                                <option value="divergence">Divergence</option>
-                                <option value="vortex">Vortex</option>
-                                <option value="custom">Custom</option>
-                            </select>
-                        </div> -->
-                        
-                        <!-- <div>
-                            <label class="block text-sm font-medium text-light/80 mb-1">Resolution</label>
-                            <input type="range" id="resolution" min="3" max="20" value="8" 
-                                class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary">
-                            <div class="flex justify-between text-xs text-light/60 mt-1">
-                                <span>Low</span>
-                                <span>High</span>
-                            </div>
-                        </div> -->
-                        
+                    <div class="space-y-4">                        
                         <div>
                             <label class="block text-sm font-medium text-light/80 mb-1">Vector Scale</label>
                             <input type="range" id="vector-scale" min="0.1" max="2" step="0.1" value="1" 
                                 class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary">
                         </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-light/80 mb-1">Show Grid</label>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="show-grid" checked 
-                                    class="w-4 h-4 text-primary bg-dark/50 border border-white/10 rounded focus:ring-primary/50">
-                                <label for="show-grid" class="ml-2 text-sm text-light/80">Display coordinate grid</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Visualization Settings -->
-                <div class="panel-gradient rounded-xl p-4 border border-white/10">
-                    <h2 class="text-lg font-medium mb-3 flex items-center gap-2">
-                        <i class="fas fa-eye text-primary"></i>
-                        Visualization
-                    </h2>
-                    
-                    <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-light/80 mb-1">Color Scheme</label>
                             <select id="color-scheme" class="w-full bg-dark/50 border border-white/10 rounded-lg px-3 py-2 text-light focus:outline-none focus:ring-2 focus:ring-primary/50">
-                                <option value="speed">Speed Magnitude</option>
                                 <option value="direction">Direction</option>
                                 <option value="temperature">Temperature Map</option>
+                                <option value="speed">Speed Magnitude</option>
                                 <option value="rainbow">Rainbow</option>
                                 <option value="grayscale">Grayscale</option>
+                                
                             </select>
                         </div>
                         
@@ -238,22 +193,40 @@
                         <label class="block text-sm font-medium text-light/80 mb-1">Show PVF vectors</label>
                         <!-- Present PVF button -->
                         <div class="flex items-center">
-                            <!-- <input type="checkbox" id="show-streamlines" 
-                                class="w-4 h-4 text-primary bg-dark/50 border border-white/10 rounded focus:ring-primary/50">
-                            <label for="show-streamlines" class="ml-2 text-sm text-light/80">Display particle paths</label> -->
                             <button id="present-pvf" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-left gap-2" onclick="loadPVFVectorField()">
-                                <i class="fas fa-play"></i>
+                                <i class="fas fa-long-arrow-right"></i>
                                 <span>Present PVF</span>
                             </button>
                         </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-light/80 mb-1">Show Grid</label>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="show-grid" checked 
+                                    class="w-4 h-4 text-primary bg-dark/50 border border-white/10 rounded focus:ring-primary/50">
+                                <label for="show-grid" class="ml-2 text-sm text-light/80">Display coordinate grid</label>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                
+                <!-- Streamlines Settings -->
+                <div class="panel-gradient rounded-xl p-4 border border-white/10">
+                    <h2 class="text-lg font-medium mb-3 flex items-center gap-2">
+                        <i class="fas fa-camera text-primary"></i>
+                        Streamline settings
+                    </h2>
+                    
+                    <div class="space-y-4">
 
                         <label class="block text-sm font-medium text-light/80 mb-4">Show Streamlines</label>
                         <div class="flex items-center">
                             <!-- <input type="checkbox" id="show-streamlines" 
                                 class="w-4 h-4 text-primary bg-dark/50 border border-white/10 rounded focus:ring-primary/50">
                             <label for="show-streamlines" class="ml-2 text-sm text-light/80">Display particle paths</label> -->
-                            <button id="present-streamlines" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-left gap-2">
-                                <i class="fas fa-play"></i>
+                            <button id="present-streamlines" class="flex-1 bg-primary hover:bg-primary/80 text-white rounded-lg py-2 px-4 transition-colors flex items-center justify-left gap-2" onclick="createStreamlines()">
+                                <i class="fas fa-bars"></i>
                                 <span>Present Streamlines</span>
                             </button>
                         </div>
@@ -271,11 +244,11 @@
                     <div class="space-y-4 mb-5">
                         <div>
                             <label class="block text-sm font-medium text-light/80 mb-1">Time Frame</label>
-                            <input type="range" id="resolution" min="3" max="20" value="8" 
+                            <input type="range" id="time-slider" min="0" max="100" value="0" 
                                 class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary">
                             <div class="flex justify-between text-xs text-light/60 mt-1">
-                                <span>Tmin=></span>
-                                <span>Tmax=</span>
+                                <span id="time-slider-tmin">Tmin=</span>
+                                <span id="time-slider-tmax">Tmax=</span>
                             </div>
                         </div>
                         
@@ -301,6 +274,26 @@
                     <!-- Present Singularity button -->
                 </div>
 
+
+                <!-- Animation Settings -->
+                <div class="panel-gradient rounded-xl p-4 border border-white/10 mb-4">
+                    <h2 class="text-lg font-medium mb-3 flex items-center gap-2">
+                        <i class="fas fa-square text-primary"></i>
+                        Console box
+                    </h2>
+                    
+                    <div class="space-y-4 mb-5">
+                        <div>
+                            <div id="error-message" class="mt-4 p-3 bg-red-50 rounded-lg hidden">
+                                <h3 class="font-medium text-blue-800">Message:</h3>
+                                <p id="error-details" class="text-sm text-blue-700"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Present Streamlines button -->
+                    <!-- Present Singularity button -->
+                </div>
             </div>
             
         </aside>
@@ -313,7 +306,7 @@
             <div id="loading-indicator" class="absolute inset-0 flex items-center justify-center bg-dark/70 backdrop-blur-sm z-30">
                 <div class="text-center">
                     <div class="inline-block w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"></div>
-                    <p class="text-light/80">Loading PVF...</p>
+                    <p class="text-light/80">Loading PVF data...</p>
                 </div>
             </div>
             
@@ -350,22 +343,26 @@
 
     <script>
         // DOM Elements
-        const sidebarToggle = document.getElementById('sidebar-toggle');
-        const sidebar = document.getElementById('sidebar');
-        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const sidebarToggle          = document.getElementById('sidebar-toggle');
+        const sidebar                = document.getElementById('sidebar');
+        const sidebarOverlay         = document.getElementById('sidebar-overlay');
         const visualizationContainer = document.getElementById('visualization-container');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        const resetViewBtn = document.getElementById('reset-view');
-        const toggleFullscreenBtn = document.getElementById('toggle-fullscreen');
-        const exportDataBtn = document.getElementById('export-data');
+        const loadingIndicator       = document.getElementById('loading-indicator');
+        const resetViewBtn           = document.getElementById('reset-view');
+        const toggleFullscreenBtn    = document.getElementById('toggle-fullscreen');
+        const exportDataBtn          = document.getElementById('export-data');
         
         // DOM elements for File Panel
-        const folderSelect = document.getElementById('subject-select');
-        const fileSelect = document.getElementById('file-select');
+        const folderSelect       = document.getElementById('subject-select');
+        const fileSelect         = document.getElementById('file-select');
         const selectedFolderInfo = document.getElementById('selected-folder-info');
         const selectedFolderPath = document.getElementById('selected-folder-path');
-        const errorMessage = document.getElementById('error-message');
-        const errorDetails = document.getElementById('error-details');
+        const errorMessage       = document.getElementById('error-message');
+        const errorDetails       = document.getElementById('error-details');
+
+        const timeSliderTMin = document.getElementById('time-slider-tmin');
+        const timeSliderTMax = document.getElementById('time-slider-tmax');
+        const timeSlider     = document.getElementById('time-slider');
         
         // PVF variables
         let subject_ID                  = "";
@@ -380,10 +377,11 @@
         let PVF_streamlines_timeWindows = {};
 
         let volume_size = 50 // where brain, vectors and streamlines reside
+        let streamlineWidth = 0.025
 
         // GUI parameters
         t_min             = 0
-        t_max             = 100
+        t_max             = 99
         current_timepoint = 0
 
         // Three.js Scene Variables
@@ -403,7 +401,7 @@
             resolution: 20,
             vectorScale: 0.8,
             showGrid: false,
-            colorScheme: 'speed',
+            colorScheme: 'direction',
             vectorDisplay: 'arrows',
             showStreamlines: true,
             animationSpeed: 1,
@@ -422,8 +420,6 @@
             // Setup Three.js scene
             setupThreeJS();
             
-            // Generate initial vector field
-            generateVectorField();
             
             // Create vector objects
             createVectorObjects();
@@ -435,12 +431,12 @@
             animate();
             
             // // Hide loading indicator
-            // setTimeout(() => {
-            //     loadingIndicator.classList.add('opacity-0');
-            //     setTimeout(() => {
-            //         loadingIndicator.classList.add('hidden');
-            //     }, 300);
-            // }, 800);
+            setTimeout(() => {
+                loadingIndicator.classList.add('opacity-0');
+                setTimeout(() => {
+                    loadingIndicator.classList.add('hidden');
+                }, 300);
+            }, 800);
 
             loadSubjectList();
         }
@@ -551,6 +547,10 @@
             //     settings.resolution = parseInt(e.target.value);
             //     regenerateVectorField();
             // });
+            timeSlider.min           = t_min;
+            timeSlider.max           = t_max;
+            timeSliderTMax.innerHTML = "Tmax=" + t_max;
+            timeSliderTMin.innerHTML = "Tmin=" + t_min;
             
             // Vector scale
             document.getElementById('vector-scale').addEventListener('input', (e) => {
@@ -574,6 +574,14 @@
             document.getElementById('vector-display').addEventListener('change', (e) => {
                 settings.vectorDisplay = e.target.value;
                 updateVectorObjects();
+            });
+
+
+            document.getElementById('time-slider').addEventListener('change', (e) => {
+                current_timepoint = e.target.value;
+                
+                showError(current_timepoint)
+                // updateVectorObjects();
             });
             
             // // Show streamlines
@@ -649,7 +657,6 @@
                 }
             }
 
-            
             createVectorObjects()
             // Update controls
             controls.update();
@@ -659,16 +666,16 @@
             // Render scene
             renderer.render(scene, camera);
             
+            showError("PVF vector field loaded successfully")
             // Hide loading indicator
             loadingIndicator.classList.add('opacity-0', 'hidden');
-            // Hide loading indicator
-            // setTimeout(() => {
-            //     loadingIndicator.classList.add('opacity-0');
-            //     setTimeout(() => {
-            //         loadingIndicator.classList.add('hidden');
-            //     }, 300);
-            // }, 500);
         }
+
+
+        async function updatePVFStreamlinesTime() {
+            timepoint = 0;
+            
+        };
 
         // Generate vector field based on settings
         function generateVectorField() {
@@ -1234,7 +1241,92 @@
             }
         });
         
-        
+        // streamlines
+        /**
+         */
+        function createStreamlines() {
+            // 创建流线组统一管理
+            const streamlinesGroup = new THREE.Group();
+            streamlinesGroup.name = 'PVFstreamlines';
+            scene.add(streamlinesGroup);
+
+            // 颜色定义：起始红色，结束蓝色
+            const startColor = new THREE.Color(0xff0000); // 红色
+            const endColor = new THREE.Color(0x0000ff);   // 蓝色
+
+            num_streamlines = PVF_streamlines_timeWindows.length;
+            showError(`Number of streamlines: ${num_streamlines}`)
+
+            
+            for (i=0; i < num_streamlines; i++){
+                // 1. 计算流线轨迹（使用RK4数值积分）
+                const streamline_points = PVF_streamlines_timeWindows[i];
+
+                const points = [];
+                for (j=0; j < streamline_points.length; j++){
+                    points.push(new THREE.Vector3(streamline_points[j][0], streamline_points[j][1], streamline_points[j][2]));
+                }
+                // 跳过太短的流线
+                if (points.length < 5) return;
+
+                // 2. 创建流线的可视化对象
+                const curve = new THREE.CatmullRomCurve3(points);
+                
+                // 创建管状几何体
+                const geometry = new THREE.TubeGeometry(
+                    curve,
+                    60,  // 沿曲线的分段数
+                    streamlineWidth,  // 管半径
+                    8,   // 横截面分段数
+                    false  // 不闭合
+                );
+
+                // 为每个顶点设置颜色（从红到蓝渐变）
+                const colors = [];
+                for (let i = 0; i < geometry.attributes.position.count; i++) {
+                    // 计算沿流线的比例（0到1）
+                    const t = i / (geometry.attributes.position.count - 1);
+                    // 颜色插值
+                    const color = startColor.clone().lerp(endColor, t);
+                    colors.push(color.r, color.g, color.b);
+                }
+
+                // 设置颜色属性
+                geometry.setAttribute(
+                    'color',
+                    new THREE.BufferAttribute(new Float32Array(colors), 3)
+                );
+
+                // 创建材质
+                const material = new THREE.MeshBasicMaterial({
+                    vertexColors: THREE.VertexColors,  // 使用顶点颜色
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.85
+                });
+
+                // 创建网格并返回
+                const streamline = new THREE.Mesh(geometry, material);
+                streamlinesGroup.add(streamline);
+            };
+
+            // return streamlinesGroup;
+            // 4. 渲染循环
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+            // 窗口大小适配
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+            showError("Streamlines created successfully.")
+        }
+
         // 加载subject列表
         async function loadSubjectList(path = '') {
             try {
@@ -1338,10 +1430,12 @@
         
         async function loadFile() {
             // 这里可以实现加载选中文件夹内文件的逻辑
+            loadingIndicator.classList.remove('hidden', 'opacity-0');
             subject = folderSelect.value;
             file = fileSelect.value;
             const response = await fetch(`http://localhost:3000/api/load-subjects-files?subject=${encodeURIComponent(subject)}&file=${encodeURIComponent(file)}`);
                 
+
                 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => null);
@@ -1359,12 +1453,19 @@
             PVF_streamlines_timeWindows = data.streamlines;
             PVF_num_time_points         = data.PVF_num_time_points;
             PVF_dimension               = data.PVF_dimension;
+            t_max                       = PVF_num_time_points - 1;
 
-            // showError(Object.keys(data));
-            // showError(data);
-            showError(Object.keys(data));
-            // showError(`Subject name: ${subject_ID}. Number of time points: ${PVF_num_time_points}.`);
+            timeSlider.min           = t_min;
+            timeSlider.max           = t_max;
+            timeSlider.value         = current_timepoint;
+            timeSliderTMax.innerHTML = "Tmax=" + t_max;
+            timeSliderTMin.innerHTML = "Tmin=" + t_min;
+
+            showError("PVF data loaded successfully.");
+            loadingIndicator.classList.add('hidden', 'opacity-0');
+            
         }
+
 
         // 显示错误信息
         function showError(message) {
